@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { fetchOrders, getCurrentUser, type Order, type LoginResponse } from "@/lib/api-client";
+import { fetchOrders, fetchCompletedOrders, getCurrentUser, type Order, type LoginResponse } from "@/lib/api-client";
 import { currencyFormatter, formatTime, cn, formatOrderCode } from "@/lib/utils";
 import { TrendingUp, DollarSign, Package, CheckCircle2, AlertCircle, Calendar, ChevronDown, ChevronUp, ShoppingBag, CreditCard } from "lucide-react";
 import { StatsGridSkeleton } from "@/components/shared/menu-skeleton";
@@ -70,6 +70,7 @@ export default function CashierStatisticsPage() {
   };
 
   // Fetch orders based on period
+  // Need to fetch both incomplete and completed orders for complete statistics
   const loadOrders = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -80,8 +81,21 @@ export default function CashierStatisticsPage() {
         all: true, // Get all orders without pagination for statistics
       };
 
-      const response = await fetchOrders(params);
-      setOrders(response.data);
+      // Fetch both incomplete and completed orders in parallel
+      const [incompleteResponse, completedResponse] = await Promise.all([
+        fetchOrders(params).catch(() => ({ data: [] })),
+        fetchCompletedOrders(params).catch(() => ({ data: [] })),
+      ]);
+
+      // Combine both results
+      const allOrders = [...incompleteResponse.data, ...completedResponse.data];
+      
+      // Remove duplicates (in case there's any overlap) based on order ID
+      const uniqueOrders = allOrders.filter(
+        (order, index, self) => index === self.findIndex((o) => o.id === order.id)
+      );
+
+      setOrders(uniqueOrders);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
     } finally {

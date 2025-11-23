@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UpdateTenantRequest;
+use App\Models\Plan;
 use App\Services\Tenant\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 
@@ -88,6 +89,19 @@ class TenantController extends Controller
             'is_active' => $tenant->is_active,
             'subscription' => $subscriptionInfo,
         ]);
+    }
+
+    /**
+     * Get available plans for tenant to view.
+     */
+    public function plans(): JsonResponse
+    {
+        $plans = Plan::query()
+            ->where('is_active', true)
+            ->latest()
+            ->paginate(20);
+
+        return response()->json($plans);
     }
 }
 

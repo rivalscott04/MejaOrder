@@ -146,6 +146,7 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
       { id: "users", label: "Pengguna", icon: <Users className="h-5 w-5" />, href: "/tenant-admin/users" },
       { id: "orders", label: "Pesanan", icon: <ClipboardList className="h-5 w-5" />, href: "/tenant-admin/orders" },
       { id: "reports", label: "Laporan", icon: <BarChart3 className="h-5 w-5" />, href: "/tenant-admin/reports" },
+      { id: "subscription", label: "Subscription", icon: <Package className="h-5 w-5" />, href: "/tenant-admin/subscription" },
       { id: "settings", label: "Pengaturan", icon: <Settings className="h-5 w-5" />, href: "/tenant-admin/settings" },
     ],
     cashier: [
@@ -170,36 +171,39 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
   };
 
   const items = menuItems[role];
-  const isActive = (href: string) => {
-    // Normalize pathname and href (remove trailing slashes)
-    const normalizedPathname = pathname.replace(/\/$/, "") || "/";
-    const normalizedHref = href.replace(/\/$/, "") || "/";
+  
+  // Find the most specific (longest matching) menu item for the current pathname
+  const findActiveHref = () => {
+    const normalizedPathname = (pathname || "/").replace(/\/$/, "") || "/";
+    let bestMatch: string | null = null;
+    let bestMatchLength = 0;
     
-    // Exact match
-    if (normalizedPathname === normalizedHref) {
-      return true;
-    }
-    
-    // For nested routes, check if pathname starts with href + "/"
-    // But we need to ensure we don't match parent routes when on child routes
-    // Strategy: Check if there's a longer href that also matches first
-    if (normalizedPathname.startsWith(normalizedHref + "/")) {
-      // Check if there's another menu item with a longer href that also matches
-      // If so, that one should be active instead
-      const hasLongerMatch = items.some((item) => {
-        const itemHref = item.href.replace(/\/$/, "") || "/";
-        return (
-          itemHref.length > normalizedHref.length &&
-          normalizedPathname.startsWith(itemHref + "/") &&
-          itemHref.startsWith(normalizedHref + "/")
-        );
-      });
+    for (const item of items) {
+      const itemHref = (item.href || "/").replace(/\/$/, "") || "/";
       
-      // Only return true if no longer match exists
-      return !hasLongerMatch;
+      // Check for exact match (highest priority)
+      if (normalizedPathname === itemHref) {
+        return itemHref; // Exact match always wins
+      }
+      
+      // Check for nested match (pathname starts with itemHref + "/")
+      if (normalizedPathname.startsWith(itemHref + "/")) {
+        // If this match is longer (more specific) than the current best, update best match
+        if (itemHref.length > bestMatchLength) {
+          bestMatch = itemHref;
+          bestMatchLength = itemHref.length;
+        }
+      }
     }
     
-    return false;
+    return bestMatch;
+  };
+  
+  const activeHref = findActiveHref();
+  
+  const isActive = (href: string) => {
+    const normalizedHref = (href || "/").replace(/\/$/, "") || "/";
+    return normalizedHref === activeHref;
   };
 
   // Get display values - prefer API data over props

@@ -1338,6 +1338,52 @@ export async function fetchPlans(): Promise<PlanResponse> {
   return response.json();
 }
 
+// Fetch available plans for tenant (public/tenant endpoint)
+export async function fetchAvailablePlans(): Promise<PlanResponse> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  
+  // Try tenant endpoint first, fallback to admin endpoint
+  const endpoints = [
+    `${base}/api/tenant/plans`,
+    `${base}/api/admin/plans`,
+  ];
+
+  let lastError: Error | null = null;
+  
+  for (const url of endpoints) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+      
+      // If 403 or 404, try next endpoint
+      if (response.status === 403 || response.status === 404) {
+        continue;
+      }
+      
+      // For other errors, throw immediately
+      throw new Error(`Failed to fetch plans: ${response.statusText}`);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      continue;
+    }
+  }
+  
+  // If all endpoints failed, throw the last error
+  throw lastError || new Error("Failed to fetch plans from all endpoints");
+}
+
 export async function fetchPlan(planId: number): Promise<Plan> {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {

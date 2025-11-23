@@ -91,6 +91,8 @@ Route::prefix('tenant')
         Route::get('settings', [TenantTenantController::class, 'show']);
         Route::put('settings', [TenantTenantController::class, 'update']);
 
+        Route::get('plans', [TenantTenantController::class, 'plans']);
+
         Route::get('categories', [CategoryController::class, 'index']);
     });
 
