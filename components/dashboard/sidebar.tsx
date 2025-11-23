@@ -48,6 +48,7 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [incompleteOrderCount, setIncompleteOrderCount] = useState<number>(0);
+  const [notificationCount, setNotificationCount] = useState<number>(0);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -66,7 +67,7 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
     fetchUserData();
   }, []);
 
-  // Fetch incomplete orders count for cashier role
+  // Fetch incomplete orders count and notifications for cashier role
   useEffect(() => {
     if (role !== "cashier") return;
 
@@ -81,9 +82,24 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
         ).length;
         
         setIncompleteOrderCount(incompleteCount);
+        
+        // Count notifications: pending orders + waiting verification + ready orders
+        // Ini adalah pengingat untuk cashier tentang:
+        // 1. Pesanan baru yang perlu dikonfirmasi (pending)
+        // 2. Pembayaran yang perlu diverifikasi (waiting_verification)
+        // 3. Pesanan yang sudah siap dan perlu diantar (ready)
+        const notifCount = response.data.filter(
+          (order) => 
+            order.order_status === "pending" || // Pesanan baru perlu konfirmasi
+            order.payment_status === "waiting_verification" || // Pembayaran perlu verifikasi
+            order.order_status === "ready" // Pesanan siap perlu diantar
+        ).length;
+        
+        setNotificationCount(notifCount);
       } catch (error) {
-        console.error("Failed to fetch incomplete orders count:", error);
+        console.error("Failed to fetch orders count:", error);
         setIncompleteOrderCount(0);
+        setNotificationCount(0);
       }
     };
 
@@ -142,7 +158,13 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
       },
       { id: "statistics", label: "Statistik", icon: <TrendingUp className="h-5 w-5" />, href: "/cashier/today" },
       { id: "history", label: "Riwayat Pesanan", icon: <History className="h-5 w-5" />, href: "/cashier/history" },
-      { id: "notifications", label: "Notifikasi", icon: <Bell className="h-5 w-5" />, href: "/cashier/notifications" },
+      { 
+        id: "notifications", 
+        label: "Notifikasi", 
+        icon: <Bell className="h-5 w-5" />, 
+        href: "/cashier/notifications",
+        badge: notificationCount > 0 ? notificationCount : undefined 
+      },
       { id: "settings", label: "Pengaturan", icon: <Settings className="h-5 w-5" />, href: "/cashier/settings" },
     ],
   };
