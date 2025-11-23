@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MejaOrder - Frontend Application
 
-## Getting Started
+Aplikasi frontend untuk sistem pemesanan makanan berbasis Next.js 16 dengan TypeScript dan Tailwind CSS. Aplikasi ini terhubung dengan backend Laravel untuk mengelola pemesanan, menu, dan transaksi.
 
-First, run the development server:
+## Persyaratan
+
+- Node.js 18 atau lebih baru
+- npm, yarn, pnpm, atau bun
+- Backend Laravel yang sudah berjalan (lihat `backend/README.md`)
+
+## Setup Local
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Konfigurasi Environment Variables
+
+Buat file `.env.local` di root direktori dengan isi berikut:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+NODE_ENV=development
+```
+
+### 3. Pastikan Backend Berjalan
+
+Pastikan backend Laravel sudah berjalan di `http://localhost:8000`. Jika backend menggunakan port lain, sesuaikan `NEXT_PUBLIC_BACKEND_URL` di `.env.local`.
+
+### 4. Jalankan Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Aplikasi akan berjalan di http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Konfigurasi Environment Variables
 
-## Learn More
+Buat file `.env.production` atau set environment variables di platform deployment Anda:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+NEXT_PUBLIC_BACKEND_URL=https://api.yourdomain.com
+NODE_ENV=production
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Penting:**
+- Variable `NEXT_PUBLIC_BACKEND_URL` wajib diisi dengan URL backend production
+- Gunakan HTTPS untuk production
+- Pastikan backend sudah dikonfigurasi CORS untuk menerima request dari domain frontend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Build Aplikasi
 
-## Deploy on Vercel
+```bash
+npm run build:prod
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Vercel:**
+- Set environment variables di Vercel Dashboard (Settings > Environment Variables)
+- Deploy menggunakan Vercel CLI atau connect repository ke Vercel
+
+**Server Manual:**
+```bash
+export NEXT_PUBLIC_BACKEND_URL=https://api.yourdomain.com
+export NODE_ENV=production
+npm run start
+```
+
+## Scripts
+
+- `npm run dev` - Menjalankan development server
+- `npm run build` - Build aplikasi untuk production
+- `npm run build:prod` - Build dengan NODE_ENV=production (recommended)
+- `npm run start` - Menjalankan production server
+- `npm run lint` - Menjalankan ESLint
+
+## Troubleshooting
+
+### Backend Tidak Terhubung
+
+Jika muncul error "Backend URL not configured" atau "Failed to fetch":
+
+1. Pastikan backend Laravel berjalan di `http://localhost:8000`
+2. Cek nilai `NEXT_PUBLIC_BACKEND_URL` di file `.env.local`
+3. Restart development server setelah mengubah `.env.local`
+4. Pastikan CORS di backend sudah dikonfigurasi untuk menerima request dari frontend
+
+### Environment Variables Tidak Terdeteksi
+
+Jika environment variables tidak terbaca:
+
+1. Pastikan file `.env.local` ada di root direktori (sama level dengan `package.json`)
+2. Restart development server setelah mengubah `.env.local`
+3. Untuk production, pastikan environment variables di-set di platform deployment
+4. Variable harus diawali dengan `NEXT_PUBLIC_` untuk bisa diakses di browser
