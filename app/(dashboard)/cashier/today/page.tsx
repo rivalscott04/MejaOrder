@@ -102,16 +102,21 @@ export default function CashierStatisticsPage() {
     : orders.filter((o) => o.payment_method === selectedPaymentMethod);
 
   // Calculate stats based on filtered orders (by payment method)
+  // Revenue should only count orders that are both paid AND completed
+  const completedAndPaidOrders = ordersByPaymentMethod.filter(
+    (o) => o.payment_status === "paid" && o.order_status === "completed"
+  );
+  const paidOrders = ordersByPaymentMethod.filter((o) => o.payment_status === "paid");
   const stats = {
     total: ordersByPaymentMethod.length,
-    revenue: ordersByPaymentMethod.reduce((sum, o) => sum + parseFloat(o.total_amount), 0),
+    revenue: completedAndPaidOrders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0),
     completed: ordersByPaymentMethod.filter((o) => o.order_status === "completed").length,
     pending: ordersByPaymentMethod.filter((o) => o.order_status === "pending").length,
     accepted: ordersByPaymentMethod.filter((o) => o.order_status === "accepted").length,
     preparing: ordersByPaymentMethod.filter((o) => o.order_status === "preparing").length,
     ready: ordersByPaymentMethod.filter((o) => o.order_status === "ready").length,
     canceled: ordersByPaymentMethod.filter((o) => o.order_status === "canceled").length,
-    paid: ordersByPaymentMethod.filter((o) => o.payment_status === "paid").length,
+    paid: paidOrders.length,
     unpaid: ordersByPaymentMethod.filter((o) => o.payment_status === "unpaid").length,
     waitingVerification: ordersByPaymentMethod.filter((o) => o.payment_status === "waiting_verification").length,
   };

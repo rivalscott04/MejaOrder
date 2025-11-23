@@ -175,21 +175,28 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
     const normalizedPathname = pathname.replace(/\/$/, "") || "/";
     const normalizedHref = href.replace(/\/$/, "") || "/";
     
-    // Special case for cashier root
-    if (normalizedHref === "/cashier") {
-      return normalizedPathname === "/cashier";
-    }
-    
     // Exact match
     if (normalizedPathname === normalizedHref) {
       return true;
     }
     
     // For nested routes, check if pathname starts with href + "/"
-    // But make sure we don't match parent routes when on exact child routes
-    // e.g., /tenant-admin should not match when on /tenant-admin/menu
+    // But we need to ensure we don't match parent routes when on child routes
+    // Strategy: Check if there's a longer href that also matches first
     if (normalizedPathname.startsWith(normalizedHref + "/")) {
-      return true;
+      // Check if there's another menu item with a longer href that also matches
+      // If so, that one should be active instead
+      const hasLongerMatch = items.some((item) => {
+        const itemHref = item.href.replace(/\/$/, "") || "/";
+        return (
+          itemHref.length > normalizedHref.length &&
+          normalizedPathname.startsWith(itemHref + "/") &&
+          itemHref.startsWith(normalizedHref + "/")
+        );
+      });
+      
+      // Only return true if no longer match exists
+      return !hasLongerMatch;
     }
     
     return false;

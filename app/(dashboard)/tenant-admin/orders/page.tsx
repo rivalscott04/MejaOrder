@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { cn, currencyFormatter, formatTime, formatOrderCode } from "@/lib/utils";
 import {
   fetchOrders,
+  fetchCompletedOrders,
   fetchOrderDetail,
   getCurrentUser,
   fetchTenantSettings,
@@ -151,23 +152,65 @@ export default function OrdersPage() {
     try {
       setIsLoading(true);
       const { date_from, date_to } = getDateRange(periodFilter);
-      const params: {
+      
+      // Build params for incomplete orders
+      const incompleteParams: {
         date_from?: string;
         date_to?: string;
         order_status?: string;
         payment_status?: string;
         all?: boolean;
       } = {
-        all: true, // Get all orders without pagination
+        all: true,
       };
 
-      if (date_from) params.date_from = date_from;
-      if (date_to) params.date_to = date_to;
-      if (orderStatusFilter !== "all") params.order_status = orderStatusFilter;
-      if (paymentStatusFilter !== "all") params.payment_status = paymentStatusFilter;
+      if (date_from) incompleteParams.date_from = date_from;
+      if (date_to) incompleteParams.date_to = date_to;
+      if (paymentStatusFilter !== "all") incompleteParams.payment_status = paymentStatusFilter;
+      
+      // Only apply order_status filter if it's not "completed" or "all"
+      // because completed orders are fetched separately
+      if (orderStatusFilter !== "all" && orderStatusFilter !== "completed") {
+        incompleteParams.order_status = orderStatusFilter;
+      }
 
-      const response = await fetchOrders(params);
-      setOrders(response.data);
+      // Build params for completed orders
+      const completedParams: {
+        date_from?: string;
+        date_to?: string;
+        payment_status?: string;
+        all?: boolean;
+      } = {
+        all: true,
+      };
+
+      if (date_from) completedParams.date_from = date_from;
+      if (date_to) completedParams.date_to = date_to;
+      if (paymentStatusFilter !== "all") completedParams.payment_status = paymentStatusFilter;
+
+      // Fetch both incomplete and completed orders in parallel
+      const [incompleteResponse, completedResponse] = await Promise.all([
+        fetchOrders(incompleteParams).catch(() => ({ data: [] })),
+        // Only fetch completed orders if filter is "all" or "completed"
+        (orderStatusFilter === "all" || orderStatusFilter === "completed")
+          ? fetchCompletedOrders(completedParams).catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      // Combine both results
+      const allOrders = [...incompleteResponse.data, ...completedResponse.data];
+      
+      // Remove duplicates (in case there's any overlap)
+      const uniqueOrders = allOrders.filter(
+        (order, index, self) => index === self.findIndex((o) => o.id === order.id)
+      );
+
+      // Sort by created_at descending (newest first)
+      uniqueOrders.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setOrders(uniqueOrders);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
       setAlertModal({
