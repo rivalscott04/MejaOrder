@@ -7,6 +7,7 @@ use App\Http\Requests\Tenant\StoreTableRequest;
 use App\Http\Requests\Tenant\UpdateTableRequest;
 use App\Models\Table;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TableController extends Controller
@@ -64,12 +65,13 @@ class TableController extends Controller
         return response()->json(['qr_token' => $table->qr_token]);
     }
 
-    public function printQr(Table $table)
+    public function printQr(Request $request, Table $table)
     {
         $this->authorizeTable($table);
 
         $tenant = tenant();
-        $qrUrl = config('app.frontend_url', config('app.url')) . "/o/{$tenant->slug}/t/{$table->qr_token}";
+        $frontendUrl = $this->getFrontendUrl($request);
+        $qrUrl = $frontendUrl . "/o/{$tenant->slug}/t/{$table->qr_token}";
 
         // Generate QR code using SimpleSoftwareIO/simple-qrcode or similar
         // For now, return JSON with QR URL and data for frontend to generate
@@ -81,12 +83,13 @@ class TableController extends Controller
         ]);
     }
 
-    public function downloadQr(Table $table)
+    public function downloadQr(Request $request, Table $table)
     {
         $this->authorizeTable($table);
 
         $tenant = tenant();
-        $qrUrl = config('app.frontend_url', config('app.url')) . "/o/{$tenant->slug}/t/{$table->qr_token}";
+        $frontendUrl = $this->getFrontendUrl($request);
+        $qrUrl = $frontendUrl . "/o/{$tenant->slug}/t/{$table->qr_token}";
 
         // Generate QR code image
         try {
@@ -107,6 +110,34 @@ class TableController extends Controller
                 'error' => 'QR code library not available. Please install simple-qrcode package.',
             ], 200);
         }
+    }
+
+    /**
+     * Get frontend URL dynamically from request or environment
+     */
+    protected function getFrontendUrl(Request $request): string
+    {
+        // Priority 1: Check config (from FRONTEND_URL env variable)
+        if ($frontendUrl = config('app.frontend_url')) {
+            return rtrim($frontendUrl, '/');
+        }
+
+        // Priority 2: Get from Origin header (for CORS requests)
+        if ($origin = $request->header('Origin')) {
+            return rtrim($origin, '/');
+        }
+
+        // Priority 3: Get from Referer header
+        if ($referer = $request->header('Referer')) {
+            $parsedUrl = parse_url($referer);
+            if (isset($parsedUrl['scheme']) && isset($parsedUrl['host'])) {
+                $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
+                return $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . $port;
+            }
+        }
+
+        // Priority 4: Use APP_URL as fallback
+        return rtrim(config('app.url'), '/');
     }
 
     protected function authorizeTable(Table $table): void
