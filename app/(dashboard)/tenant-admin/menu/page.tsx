@@ -17,10 +17,12 @@ import {
   toggleMenuAvailability,
   fetchCategories,
   getCurrentUser,
+  PlanLimitError,
   type Menu,
   type Category,
   type LoginResponse,
 } from "@/lib/api-client";
+import { UpgradeModal } from "@/components/shared/upgrade-modal";
 import { ToggleSwitch } from "@/components/shared/toggle-switch";
 import { MenuGridSkeleton } from "@/components/shared/menu-skeleton";
 
@@ -71,6 +73,17 @@ export default function MenuPage() {
   }>({
     isOpen: false,
     title: "",
+    message: "",
+  });
+  const [upgradeModal, setUpgradeModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    limitType?: "max_menus" | "max_users" | "max_tables" | "max_categories";
+    currentCount?: number;
+    maxLimit?: number;
+    planName?: string;
+  }>({
+    isOpen: false,
     message: "",
   });
 
@@ -157,7 +170,22 @@ export default function MenuPage() {
         await createMenu(payload);
       }
       await loadMenus(currentPage);
+      setShowModal(false);
+      setSelectedMenu(null);
     } catch (err) {
+      // Handle plan limit error
+      if (err instanceof PlanLimitError) {
+        setUpgradeModal({
+          isOpen: true,
+          message: err.message,
+          limitType: err.limitType as "max_menus" | "max_users" | "max_tables" | "max_categories",
+          currentCount: err.currentCount,
+          maxLimit: err.maxLimit,
+          planName: err.planName,
+        });
+        return;
+      }
+      // Re-throw other errors to be handled by form modal
       throw err;
     }
   };
@@ -574,6 +602,16 @@ export default function MenuPage() {
           title={alertModal.title}
           message={alertModal.message}
           variant={alertModal.variant}
+        />
+
+        <UpgradeModal
+          isOpen={upgradeModal.isOpen}
+          onClose={() => setUpgradeModal({ ...upgradeModal, isOpen: false })}
+          message={upgradeModal.message}
+          limitType={upgradeModal.limitType}
+          currentCount={upgradeModal.currentCount}
+          maxLimit={upgradeModal.maxLimit}
+          planName={upgradeModal.planName}
         />
       </div>
     </DashboardLayout>

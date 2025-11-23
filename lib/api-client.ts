@@ -461,6 +461,21 @@ export async function fetchMenu(menuId: number): Promise<Menu> {
   return response.json();
 }
 
+// Custom error class for plan limit errors
+export class PlanLimitError extends Error {
+  constructor(
+    message: string,
+    public errorCode: string,
+    public limitType?: string,
+    public currentCount?: number,
+    public maxLimit?: number,
+    public planName?: string
+  ) {
+    super(message);
+    this.name = "PlanLimitError";
+  }
+}
+
 export async function createMenu(payload: CreateMenuPayload): Promise<Menu> {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {
@@ -479,6 +494,19 @@ export async function createMenu(payload: CreateMenuPayload): Promise<Menu> {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }));
+    
+    // Check if it's a plan limit error
+    if (error.error_code && (error.error_code === "MENU_LIMIT_REACHED" || error.error_code === "NO_SUBSCRIPTION")) {
+      throw new PlanLimitError(
+        error.message || `Failed to create menu: ${response.statusText}`,
+        error.error_code,
+        error.limit_type,
+        error.current_count,
+        error.max_limit,
+        error.plan_name
+      );
+    }
+    
     throw new Error(error.message || `Failed to create menu: ${response.statusText}`);
   }
 
@@ -826,6 +854,19 @@ export async function createUser(payload: CreateUserPayload): Promise<TenantUser
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }));
+    
+    // Check if it's a plan limit error
+    if (error.error_code && (error.error_code === "USER_LIMIT_REACHED" || error.error_code === "NO_SUBSCRIPTION")) {
+      throw new PlanLimitError(
+        error.message || `Failed to create user: ${response.statusText}`,
+        error.error_code,
+        error.limit_type,
+        error.current_count,
+        error.max_limit,
+        error.plan_name
+      );
+    }
+    
     throw new Error(error.message || `Failed to create user: ${response.statusText}`);
   }
 
@@ -910,6 +951,45 @@ export type TenantSettings = {
     expires_at: string;
   } | null;
 };
+
+export type UsageStats = {
+  has_subscription: boolean;
+  plan_name?: string;
+  menus?: {
+    current: number;
+    max: number | null;
+    is_unlimited: boolean;
+    percentage: number;
+  };
+  users?: {
+    current: number;
+    max: number | null;
+    is_unlimited: boolean;
+    percentage: number;
+  };
+};
+
+export async function fetchUsageStats(): Promise<UsageStats> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/usage-stats`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch usage stats: ${response.statusText}`);
+  }
+
+  return response.json();
+}
 
 export async function fetchTenantSettings(): Promise<TenantSettings> {
   const backendUrl = getBackendUrl();

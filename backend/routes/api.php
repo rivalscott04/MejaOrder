@@ -113,6 +113,7 @@ Route::prefix('tenant')
         Route::put('settings', [TenantTenantController::class, 'update']);
 
         Route::get('plans', [TenantTenantController::class, 'plans']);
+        Route::get('usage-stats', [TenantTenantController::class, 'usageStats']);
 
         Route::get('categories', [CategoryController::class, 'index']);
         Route::post('categories', [CategoryController::class, 'store']);
@@ -154,6 +155,10 @@ Route::prefix('admin')
     ->group(function () {
         Route::apiResource('tenants', SuperAdminTenantController::class);
         Route::post('tenants/{tenant}/toggle-status', [SuperAdminTenantController::class, 'toggleStatus']);
+        Route::get('tenants/{tenant}/users', [SuperAdminTenantController::class, 'getUsers']);
+        Route::post('tenants/{tenant}/users', [SuperAdminTenantController::class, 'createUser']);
+        Route::put('tenants/{tenant}/users/{user}', [SuperAdminTenantController::class, 'updateUser']);
+        Route::post('tenants/{tenant}/users/{user}/toggle-status', [SuperAdminTenantController::class, 'toggleUserStatus']);
         Route::apiResource('plans', SuperAdminPlanController::class);
         Route::get('settings/maintenance-mode', [SuperAdminSettingsController::class, 'getMaintenanceMode']);
         Route::put('settings/maintenance-mode', [SuperAdminSettingsController::class, 'updateMaintenanceMode']);

@@ -93,30 +93,30 @@ export default function SuperAdminUsersPage() {
         throw new Error("Tenant not found");
       }
 
-      // Try super admin endpoint first
-      let response = await fetch(`${base}/api/admin/tenants/${tenantId}/users`, {
+      // Use super admin endpoint to get users from tenant
+      const response = await fetch(`${base}/api/admin/tenants/${tenantId}/users`, {
         method: "GET",
         headers: getAuthHeaders(),
         credentials: "include",
       });
 
-      // If endpoint doesn't exist (404), fallback to get tenant detail
-      if (response.status === 404) {
-        response = await fetch(`${base}/api/admin/tenants/${tenantId}`, {
-          method: "GET",
-          headers: getAuthHeaders(),
-          credentials: "include",
-        });
-        
-        if (response.ok) {
-          const tenantData = await response.json();
-          setUsers(tenantData.users || []);
-          return;
-        }
-      }
-
       if (!response.ok) {
-        throw new Error("Gagal memuat users");
+        if (response.status === 404) {
+          // Endpoint might not exist yet, try alternative
+          const altResponse = await fetch(`${base}/api/admin/tenants/${tenantId}`, {
+            method: "GET",
+            headers: getAuthHeaders(),
+            credentials: "include",
+          });
+          
+          if (altResponse.ok) {
+            const tenantData = await altResponse.json();
+            setUsers(tenantData.users || []);
+            return;
+          }
+        }
+        const errorData = await response.json().catch(() => ({ message: "Gagal memuat users" }));
+        throw new Error(errorData.message || "Gagal memuat users");
       }
 
       const data = await response.json();

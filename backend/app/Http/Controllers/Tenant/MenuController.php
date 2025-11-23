@@ -6,11 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreMenuRequest;
 use App\Http\Requests\Tenant\UpdateMenuRequest;
 use App\Models\Menu;
+use App\Services\Tenant\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class MenuController extends Controller
 {
+    public function __construct(
+        protected PlanLimitService $planLimitService
+    ) {}
+
     public function index(): JsonResponse
     {
         $tenant = tenant();
@@ -68,6 +73,12 @@ class MenuController extends Controller
     public function store(StoreMenuRequest $request): JsonResponse
     {
         $tenant = tenant();
+
+        // Check plan limit before creating menu
+        $limitCheck = $this->planLimitService->checkMenuLimit($tenant);
+        if ($limitCheck) {
+            return $limitCheck;
+        }
 
         /** @var Menu $menu */
         $menu = Menu::query()->create([

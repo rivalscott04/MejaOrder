@@ -6,10 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UpdateTenantRequest;
 use App\Models\Plan;
 use App\Services\Tenant\SubscriptionService;
+use App\Services\Tenant\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 
 class TenantController extends Controller
 {
+    public function __construct(
+        protected PlanLimitService $planLimitService
+    ) {}
+
     public function show(): JsonResponse
     {
         $tenant = tenant();
@@ -125,6 +130,17 @@ class TenantController extends Controller
             ->paginate(20);
 
         return response()->json($plans);
+    }
+
+    /**
+     * Get current plan usage statistics.
+     */
+    public function usageStats(): JsonResponse
+    {
+        $tenant = tenant();
+        $stats = $this->planLimitService->getUsageStats($tenant);
+
+        return response()->json($stats);
     }
 }
 

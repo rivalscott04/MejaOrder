@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { StatsGridSkeleton } from "@/components/shared/menu-skeleton";
+import { UsageStatsCard } from "@/components/tenant/usage-stats-card";
 import { fetchOrders, fetchTenantSettings, getCurrentUser, type LoginResponse } from "@/lib/api-client";
 
 type TodayStats = {
@@ -197,6 +198,9 @@ function OverviewTab({
         </div>
       </div>
 
+      {/* Usage Stats */}
+      <UsageStatsCard />
+
       {/* Subscription Status */}
       <div className="rounded-2xl lg:rounded-3xl border border-slate-200 bg-white p-4 lg:p-6 shadow-sm">
         <SectionTitle icon={<ShieldCheck className="h-4 w-4" />} title="Subscription" />
@@ -216,9 +220,12 @@ function OverviewTab({
             </div>
           </div>
           <div className="mt-4 flex gap-3">
-            <button className="flex-1 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600">
-              Perpanjang
-            </button>
+            <Link
+              href="/tenant-admin/subscription"
+              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 text-center"
+            >
+              Lihat Paket
+            </Link>
             <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
               Hubungi Admin
             </button>

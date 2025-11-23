@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreTenantUserRequest;
 use App\Http\Requests\Tenant\UpdateTenantUserRequest;
 use App\Models\User;
+use App\Services\Tenant\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    public function __construct(
+        protected PlanLimitService $planLimitService
+    ) {}
+
     public function index(): JsonResponse
     {
         $tenant = tenant();
@@ -28,6 +33,12 @@ class UserController extends Controller
     public function store(StoreTenantUserRequest $request): JsonResponse
     {
         $tenant = tenant();
+
+        // Check plan limit before creating user
+        $limitCheck = $this->planLimitService->checkUserLimit($tenant);
+        if ($limitCheck) {
+            return $limitCheck;
+        }
 
         $user = User::query()->create([
             'tenant_id' => $tenant->id,
