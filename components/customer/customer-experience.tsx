@@ -652,14 +652,14 @@ function MenuCard({ menu, onSelect }: { menu: MenuItem; onSelect: () => void }) 
             </span>
           ))}
         </div>
-        <p className="line-clamp-2 text-sm text-slate-500 min-w-0">{menu.description}</p>
+        <p className="line-clamp-2 text-xs text-slate-500 min-w-0">{menu.description}</p>
         <div className="mt-auto flex items-center justify-between gap-2 min-w-0">
-          <p className="font-semibold text-slate-900 shrink-0 whitespace-nowrap">{currencyFormatter.format(menu.price)}</p>
+          <p className="font-semibold text-slate-900 shrink-0 whitespace-nowrap text-sm">{currencyFormatter.format(menu.price)}</p>
           <button
             disabled={!menu.isAvailable}
             onClick={onSelect}
             className={cn(
-              "rounded-full px-4 py-2 text-sm font-semibold transition shrink-0 whitespace-nowrap",
+              "rounded-full px-3.5 py-1.5 text-xs font-semibold transition flex-shrink-0 whitespace-nowrap",
               menu.isAvailable ? "bg-emerald-500 text-white hover:bg-emerald-600" : "bg-slate-100 text-slate-400"
             )}
           >
