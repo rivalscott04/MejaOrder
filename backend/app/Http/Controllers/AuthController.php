@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -52,8 +53,16 @@ class AuthController extends Controller
             ]);
         }
 
+        // Log detailed error for monitoring, but return generic message
+        Log::warning('Failed login attempt', [
+            'email' => $validated['email'],
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'timestamp' => now()->toIso8601String(),
+        ]);
+
         return response()->json([
-            'message' => 'Email atau password salah.',
+            'message' => 'Kredensial tidak valid.',
         ], 401);
     }
 

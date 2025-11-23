@@ -26,10 +26,13 @@ class PaymentCallbackController extends Controller
      */
     public function handle(Request $request): JsonResponse
     {
-        // Log incoming callback for debugging
+        // Log incoming callback for debugging (without sensitive data)
         Log::info('Payment callback received', [
-            'headers' => $request->headers->all(),
-            'body' => $request->all(),
+            'ip' => $request->ip(),
+            'reference' => $request->input('reference'),
+            'status' => $request->input('status'),
+            'method' => $request->input('method'),
+            // Jangan log: amount, signature, headers lengkap, atau data sensitif
         ]);
 
         // Validate callback signature (Tripay uses signature verification)
@@ -54,10 +57,8 @@ class PaymentCallbackController extends Controller
         $amount = $request->input('amount');
         $paymentMethod = $request->input('method'); // e.g., 'QRIS', 'OVO', etc.
 
-        // Find order by reference
-        $order = Order::where('order_code', $reference)
-            ->orWhere('id', $reference)
-            ->first();
+        // Hanya lookup dengan order_code untuk keamanan
+        $order = Order::where('order_code', $reference)->first();
 
         if (! $order) {
             Log::warning('Order not found for payment callback', [
@@ -110,17 +111,27 @@ class PaymentCallbackController extends Controller
         $privateKey = config('services.tripay.private_key', env('TRIPAY_PRIVATE_KEY'));
         
         if (! $privateKey || ! $signature) {
-            // In development, you might want to skip verification
-            if (app()->environment('local')) {
-                return true;
-            }
-            return false;
+            Log::error('Payment callback verification failed: missing credentials', [
+                'has_private_key' => !empty($privateKey),
+                'has_signature' => !empty($signature),
+                'environment' => app()->environment(),
+            ]);
+            return false; // Always verify, even in development
         }
 
         // Extract required fields for signature calculation
         $merchantCode = $request->input('merchant_code');
         $merchantRef = $request->input('merchant_ref') ?? $request->input('reference');
         $amount = $request->input('amount');
+
+        if (!$merchantCode || !$merchantRef || !$amount) {
+            Log::warning('Payment callback missing required fields', [
+                'has_merchant_code' => !empty($merchantCode),
+                'has_merchant_ref' => !empty($merchantRef),
+                'has_amount' => !empty($amount),
+            ]);
+            return false;
+        }
 
         // Calculate expected signature
         $expectedSignature = hash_hmac('sha256', $merchantCode . $merchantRef . $amount, $privateKey);

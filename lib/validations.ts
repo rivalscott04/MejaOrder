@@ -169,8 +169,8 @@ const tenantFormBaseSchema = z.object({
     .max(150, errorMessages.maxLength("Slug", 150)),
   logo_url: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
-  phone: z.string().optional().nullable().max(50, errorMessages.maxLength("Nomor telepon", 50)),
-  timezone: z.string().optional().max(50, errorMessages.maxLength("Timezone", 50)),
+  phone: z.string().max(50, errorMessages.maxLength("Nomor telepon", 50)).optional().nullable(),
+  timezone: z.string().max(50, errorMessages.maxLength("Timezone", 50)).optional(),
   is_active: z.boolean(),
 });
 

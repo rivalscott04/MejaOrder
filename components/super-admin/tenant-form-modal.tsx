@@ -241,7 +241,7 @@ export function TenantFormModal({ isOpen, onClose, onSubmit, tenant }: TenantFor
             control={control}
             render={({ field }) => (
               <ToggleSwitch
-                checked={field.value}
+                checked={field.value ?? true}
                 onChange={field.onChange}
                 label="Aktif"
               />

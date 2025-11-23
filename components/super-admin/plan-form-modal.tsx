@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { ToggleSwitch } from "@/components/shared/toggle-switch";
 import type { Plan, CreatePlanPayload, UpdatePlanPayload } from "@/lib/api-client";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useForm, Controller, useFieldArray, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createPlanFormSchema,
@@ -51,8 +51,9 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
     },
   });
 
+  // Type assertion needed because FormData is a union type, but both schemas have features_json
   const { fields, append, remove } = useFieldArray({
-    control,
+    control: control as any,
     name: "features_json",
   });
 
@@ -107,7 +108,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
         max_tenants: data.max_tenants || null,
         max_users: data.max_users || null,
         max_menus: data.max_menus || null,
-        features_json: data.features_json && data.features_json.length > 0 ? data.features_json : null,
+        features_json: data.features_json && data.features_json.length > 0 ? data.features_json : undefined,
         discount_percentage: data.discount_percentage || null,
         discount_amount: data.discount_amount || null,
         discount_start_date: data.discount_start_date || null,
@@ -182,7 +183,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                 render={({ field }) => (
                   <div className="pt-2">
                     <ToggleSwitch
-                      checked={field.value}
+                      checked={field.value ?? true}
                       onChange={field.onChange}
                       label="Aktif"
                     />
@@ -333,13 +334,13 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
               </div>
             </div>
 
-            {(discountPercentage || discountAmount) && priceMonthly > 0 && (
+            {(discountPercentage || discountAmount) && priceMonthly && priceMonthly > 0 && (
               <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
                 <p className="text-xs font-semibold text-emerald-900 mb-1">Harga Setelah Diskon:</p>
                 <p className="text-lg font-bold text-emerald-700">
                   Rp {finalPrice.toLocaleString("id-ID")}
                 </p>
-                {discountPercentage && (
+                {discountPercentage && priceMonthly && (
                   <p className="text-xs text-emerald-600 mt-1">
                     Diskon {discountPercentage}% = Rp {(priceMonthly * discountPercentage / 100).toLocaleString("id-ID")}
                   </p>
