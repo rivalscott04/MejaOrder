@@ -26,6 +26,7 @@ type QrItem = {
 };
 
 type LayoutOption = 1 | 4 | 8;
+type PaperSize = "A4" | "Legal";
 
 export function QrPrintAllModal({
   isOpen,
@@ -36,6 +37,7 @@ export function QrPrintAllModal({
   onGetQrData,
 }: QrPrintAllModalProps) {
   const [layout, setLayout] = useState<LayoutOption>(4);
+  const [paperSize, setPaperSize] = useState<PaperSize>("A4");
   const [qrItems, setQrItems] = useState<QrItem[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCount, setGeneratedCount] = useState(0);
@@ -51,6 +53,38 @@ export function QrPrintAllModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Update print page size dynamically
+  useEffect(() => {
+    const styleId = "qr-print-page-size";
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    
+    if (!styleElement) {
+      styleElement = document.createElement("style");
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+    
+    styleElement.textContent = `
+      @media print {
+        @page {
+          margin: 0.5cm;
+          size: ${paperSize};
+        }
+        @page:first {
+          margin-top: 0.5cm;
+        }
+      }
+    `;
+
+    return () => {
+      // Cleanup on unmount
+      const element = document.getElementById(styleId);
+      if (element) {
+        element.remove();
+      }
+    };
+  }, [paperSize]);
 
   const generateAllQrCodes = async () => {
     if (tables.length === 0) return;
@@ -158,7 +192,7 @@ export function QrPrintAllModal({
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:hidden">
         <div className="w-full max-w-4xl rounded-2xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white p-6 z-10">
+          <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white p-6 z-10 print:hidden">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Print Semua QR Code</h2>
               <p className="mt-1 text-sm text-slate-600">
@@ -175,7 +209,30 @@ export function QrPrintAllModal({
             </button>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 print:hidden">
+            {/* Paper Size Selection */}
+            <div>
+              <label className="mb-3 block text-sm font-semibold text-slate-700">
+                Ukuran Kertas
+              </label>
+              <div className="flex gap-3">
+                {(["A4", "Legal"] as PaperSize[]).map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setPaperSize(size)}
+                    className={cn(
+                      "flex-1 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition",
+                      paperSize === size
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    )}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Layout Selection */}
             <div>
               <label className="mb-3 block text-sm font-semibold text-slate-700">
@@ -273,19 +330,32 @@ export function QrPrintAllModal({
       <div className="hidden print:block print:fixed print:inset-0 print:bg-white">
         <style jsx global>{`
           @media print {
-            @page {
-              margin: 1cm;
-              size: A4;
+            * {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             body {
               margin: 0;
               padding: 0;
+              background: white;
             }
             .print-page {
               page-break-after: always;
+              page-break-inside: avoid;
+              min-height: calc(100vh - 1cm);
+              display: flex;
+              align-items: center;
+              justify-content: center;
             }
             .print-page:last-child {
               page-break-after: auto;
+            }
+            .print-qr-grid {
+              width: 100%;
+              height: 100%;
+            }
+            .print-qr-item {
+              page-break-inside: avoid;
             }
           }
         `}</style>
@@ -296,19 +366,19 @@ export function QrPrintAllModal({
             const pageItems = qrItems.slice(startIdx, endIdx);
 
             return (
-              <div key={pageIdx} className="print-page min-h-screen p-8">
-                <div className={cn("grid gap-6 h-full", getGridClass(layout))}>
+              <div key={pageIdx} className="print-page">
+                <div className={cn("print-qr-grid grid gap-6 p-4", getGridClass(layout))}>
                   {pageItems.map((item, idx) => (
                     <div
                       key={startIdx + idx}
-                      className="flex flex-col items-center justify-center rounded-lg border border-slate-300 p-4"
+                      className="print-qr-item flex flex-col items-center justify-center rounded-lg border-2 border-slate-400 p-4 bg-white"
                     >
                       {item.qrDataUrl ? (
                         <>
                           <img
                             src={item.qrDataUrl}
                             alt={`QR Code ${item.tableNumber}`}
-                            className={cn("mb-3", getQrSizeClass(layout))}
+                            className={cn("mb-3 object-contain", getQrSizeClass(layout))}
                           />
                           <p className={cn("font-bold text-slate-900", getTextSizeClass(layout))}>
                             Meja {item.tableNumber}
