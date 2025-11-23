@@ -10,9 +10,16 @@ class CheckSubscription
 {
     /**
      * Verify that the current tenant has an active subscription.
+     * Super admin bypasses this check.
      */
     public function handle(Request $request, Closure $next): mixed
     {
+        // Super admin bypasses subscription check
+        $user = $request->user();
+        if ($user && $user->role === 'super_admin') {
+            return $next($request);
+        }
+
         $tenant = app('currentTenant');
 
         if (! $tenant) {

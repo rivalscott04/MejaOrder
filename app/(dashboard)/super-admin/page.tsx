@@ -214,6 +214,20 @@ export default function SuperAdminDashboard() {
     return new Date(activeSubscription.end_date).toLocaleDateString("id-ID");
   };
 
+  const getFeaturesArray = (features: string[] | null | undefined): string[] => {
+    if (!features) return [];
+    if (Array.isArray(features)) return features;
+    if (typeof features === 'string') {
+      try {
+        const parsed = JSON.parse(features);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const calculatePlanPrice = (plan: Plan) => {
     let price = parseFloat(plan.price_monthly);
     if (plan.discount_percentage) {
@@ -436,16 +450,19 @@ export default function SuperAdminDashboard() {
                         <p className="mt-2 text-sm text-slate-600">{plan.description}</p>
                       )}
                       <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                        {plan.features_json && plan.features_json.length > 0 ? (
-                          plan.features_json.map((feature, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-emerald-600">•</span>
-                              <span>{feature}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="text-slate-400">Tidak ada fitur</li>
-                        )}
+                        {(() => {
+                          const features = getFeaturesArray(plan.features_json);
+                          return features.length > 0 ? (
+                            features.map((feature, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-emerald-600">•</span>
+                                <span>{feature}</span>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="text-slate-400">Tidak ada fitur</li>
+                          );
+                        })()}
                       </ul>
                       <div className="mt-4 flex gap-2">
                         <button
