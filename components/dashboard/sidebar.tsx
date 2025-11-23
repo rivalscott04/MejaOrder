@@ -184,9 +184,18 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
             <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
               <QrCode className="h-5 w-5 text-white" />
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-slate-900 truncate">{displayTitle}</p>
-              <p className="text-xs text-slate-500 capitalize truncate">{displaySubtitle}</p>
+            <div className="min-w-0 flex-1">
+              {isLoadingUser ? (
+                <>
+                  <div className="h-4 bg-slate-200 rounded animate-pulse mb-1.5 w-24" />
+                  <div className="h-3 bg-slate-200 rounded animate-pulse w-20" />
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-bold text-slate-900 truncate">{displayTitle}</p>
+                  <p className="text-xs text-slate-500 capitalize truncate">{displaySubtitle}</p>
+                </>
+              )}
             </div>
           </div>
         )}

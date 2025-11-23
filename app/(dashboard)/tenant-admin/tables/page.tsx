@@ -5,9 +5,10 @@ import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { tenantContext, tenantTables } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { QrCode, Plus, Edit, Trash2, Copy, Check, Loader2 } from "lucide-react";
+import { QrCode, Plus, Edit, Trash2, Copy, Check, Loader2, Printer } from "lucide-react";
 import { TableFormModal } from "@/components/tenant/table-form-modal";
 import { QrPrintModal } from "@/components/tenant/qr-print-modal";
+import { QrPrintAllModal } from "@/components/tenant/qr-print-all-modal";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { AlertModal } from "@/components/shared/alert-modal";
 import { CardGridSkeleton } from "@/components/shared/menu-skeleton";
@@ -34,9 +35,11 @@ export default function TablesPage() {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isConfirmingRegenerate, setIsConfirmingRegenerate] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [showQrPrintAllModal, setShowQrPrintAllModal] = useState(false);
   const [qrData, setQrData] = useState<any>(null);
   const [isLoadingQr, setIsLoadingQr] = useState(false);
   const [tenantSlug, setTenantSlug] = useState<string>("");
+  const [tenantName, setTenantName] = useState<string>("");
   const [copiedTableId, setCopiedTableId] = useState<number | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -71,14 +74,17 @@ export default function TablesPage() {
       const userData = await getCurrentUser();
       if (userData?.tenant?.slug) {
         setTenantSlug(userData.tenant.slug);
+        setTenantName(userData.tenant.name || tenantContext.name);
       } else {
         // Fallback to mock data
         setTenantSlug(tenantContext.slug);
+        setTenantName(tenantContext.name);
       }
     } catch (err) {
       console.error("Failed to fetch tenant slug:", err);
       // Fallback to mock data
       setTenantSlug(tenantContext.slug);
+      setTenantName(tenantContext.name);
     }
   };
 
@@ -300,15 +306,26 @@ export default function TablesPage() {
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
             <SectionTitle icon={<QrCode className="h-4 w-4" />} title="Meja & QR Management" />
-            <button
-              onClick={handleCreate}
-              className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
-            >
-              <Plus className="h-4 w-4" />
-              Tambah Meja
-            </button>
+            <div className="flex items-center gap-2">
+              {tables.length > 0 && (
+                <button
+                  onClick={() => setShowQrPrintAllModal(true)}
+                  className="flex items-center gap-2 rounded-xl border border-emerald-500 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print All QR
+                </button>
+              )}
+              <button
+                onClick={handleCreate}
+                className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+              >
+                <Plus className="h-4 w-4" />
+                Tambah Meja
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -436,6 +453,36 @@ export default function TablesPage() {
                 }
               : undefined
           }
+        />
+
+        <QrPrintAllModal
+          isOpen={showQrPrintAllModal}
+          onClose={() => setShowQrPrintAllModal(false)}
+          tables={tables.filter((t) => t.is_active)}
+          tenantName={tenantName || tenantContext.name}
+          tenantSlug={tenantSlug || tenantContext.slug}
+          onGetQrData={async (tableId: number) => {
+            try {
+              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+              if (backendUrl) {
+                return await printTableQr(tableId);
+              } else {
+                const table = tables.find((t) => t.id === tableId);
+                if (table) {
+                  return {
+                    table_number: table.table_number,
+                    qr_token: table.qr_token,
+                    qr_url: `${window.location.origin}/o/${tenantSlug || tenantContext.slug}/t/${table.qr_token}`,
+                    tenant_name: tenantName || tenantContext.name,
+                  };
+                }
+                throw new Error("Table not found");
+              }
+            } catch (err) {
+              console.error("Failed to get QR data:", err);
+              throw err;
+            }
+          }}
         />
 
         <ConfirmModal

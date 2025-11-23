@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   Clock,
   ChevronRight,
+  ChevronDown,
   AlertTriangle,
   Printer,
   Loader2,
@@ -766,7 +767,42 @@ export default function CashierDashboard() {
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">
-                            <StatusBadge status={order.order_status} />
+                            <div className="relative" onClick={(e) => e.stopPropagation()}>
+                              <select
+                                value={order.order_status}
+                                onChange={(e) => {
+                                  const newStatus = e.target.value;
+                                  if (newStatus !== order.order_status) {
+                                    // Only call handleStatusUpdate for valid status transitions
+                                    const validStatuses: ("accepted" | "preparing" | "ready" | "completed")[] = ["accepted", "preparing", "ready", "completed"];
+                                    if (validStatuses.includes(newStatus as any)) {
+                                      handleStatusUpdate(newStatus as "accepted" | "preparing" | "ready" | "completed", order.id);
+                                    }
+                                    // For "pending" and "canceled", we might need a different handler
+                                    // For now, just allow the selection but don't update if it's not a valid transition
+                                  }
+                                }}
+                                disabled={isUpdating && updatingOrderId === order.id}
+                                className={cn(
+                                  "appearance-none rounded-full border-2 px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[140px] cursor-pointer",
+                                  order.order_status === "pending" && "border-slate-300 bg-slate-100 text-slate-700",
+                                  order.order_status === "accepted" && "border-amber-300 bg-amber-100 text-amber-700",
+                                  order.order_status === "preparing" && "border-amber-300 bg-amber-100 text-amber-700",
+                                  order.order_status === "ready" && "border-emerald-300 bg-emerald-100 text-emerald-700",
+                                  order.order_status === "completed" && "border-emerald-400 bg-emerald-200 text-emerald-800",
+                                  order.order_status === "canceled" && "border-rose-300 bg-rose-100 text-rose-700",
+                                  (isUpdating && updatingOrderId === order.id) && "opacity-50 cursor-not-allowed"
+                                )}
+                              >
+                                <option value="pending">Menunggu</option>
+                                <option value="accepted">Diterima</option>
+                                <option value="preparing">Sedang Disiapkan</option>
+                                <option value="ready">Siap</option>
+                                <option value="completed">Selesai</option>
+                                <option value="canceled">Dibatalkan</option>
+                              </select>
+                              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                            </div>
                             {(order.order_status === "ready" || order.order_status === "completed") &&
                               !order.invoice_printed_at &&
                               order.payment_status === "paid" && (
