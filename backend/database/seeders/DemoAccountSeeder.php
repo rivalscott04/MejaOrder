@@ -20,23 +20,13 @@ class DemoAccountSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create or get demo plan
-        $demoPlan = Plan::updateOrCreate(
-            ['name' => 'Demo Plan'],
-            [
-                'description' => 'Plan khusus untuk demo dan testing sebelum membeli.',
-                'price_monthly' => 0,
-                'price_yearly' => 0,
-                'features_json' => json_encode([
-                    'demo_mode',
-                    'unlimited_menu',
-                    'kasir_dashboard',
-                    'subscription_reporting',
-                    'limited_to_30_days',
-                ]),
-                'is_active' => true,
-            ]
-        );
+        // Get demo plan (should be created by PlanSeeder)
+        $demoPlan = Plan::where('name', 'Demo')->first();
+        
+        if (!$demoPlan) {
+            $this->command->error('Plan "Demo" not found. Please run PlanSeeder first.');
+            return;
+        }
 
         // Create demo tenant
         $demoTenant = Tenant::updateOrCreate(

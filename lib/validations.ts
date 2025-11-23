@@ -207,6 +207,7 @@ const planFormBaseSchema = z.object({
   max_users: z.number().min(0, "Maksimal user tidak boleh negatif").optional().nullable(),
   max_menus: z.number().min(0, "Maksimal menu tidak boleh negatif").optional().nullable(),
   features_json: z.array(z.string()).optional().nullable(),
+  allowed_report_tabs: z.array(z.enum(["financial", "sales", "operational", "analytics", "accounting"])).optional().nullable(),
   discount_percentage: z
     .number()
     .min(0, "Diskon persentase tidak boleh negatif")

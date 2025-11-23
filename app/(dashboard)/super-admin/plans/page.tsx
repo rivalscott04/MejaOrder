@@ -15,7 +15,7 @@ import {
   type CreatePlanPayload,
   type UpdatePlanPayload,
 } from "@/lib/api-client";
-import { currencyFormatter } from "@/lib/utils";
+import { currencyFormatter, formatFeatureText } from "@/lib/utils";
 import { Package, Plus, Edit, Trash2 } from "lucide-react";
 import { PlanGridSkeleton } from "@/components/shared/menu-skeleton";
 
@@ -205,8 +205,8 @@ export default function PlansPage() {
                           return features.length > 0 ? (
                             features.map((feature, idx) => (
                               <li key={idx} className="flex items-start gap-2">
-                                <span className="text-emerald-600">•</span>
-                                <span>{feature}</span>
+                                <span className="text-emerald-600 mt-1">✓</span>
+                                <span className="text-slate-700">{formatFeatureText(feature)}</span>
                               </li>
                             ))
                           ) : (

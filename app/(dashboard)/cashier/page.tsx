@@ -523,7 +523,7 @@ export default function CashierDashboard() {
               </div>
               <div className="flex-1">
                 <h3 className="text-base font-bold text-amber-900 flex items-center gap-2">
-                  ⚠️ PERINGATAN: Invoice Belum Dicetak
+                  PERINGATAN: Invoice Belum Dicetak
                 </h3>
                 <p className="mt-1.5 text-sm font-semibold text-amber-900">
                   Ada <span className="text-amber-700 font-bold text-base">{ordersNeedingInvoice.length}</span> pesanan yang sudah siap/selesai tetapi invoice belum dicetak!

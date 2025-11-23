@@ -99,6 +99,102 @@ export function isBestSellerMenu(menuId: number): boolean {
 }
 
 /**
+ * Transform feature text dari format teknis ke user-friendly
+ * @param feature - Feature text (bisa format teknis seperti "demo_mode" atau sudah user-friendly)
+ * @returns User-friendly feature text
+ */
+export function formatFeatureText(feature: string): string {
+  if (!feature) return feature;
+
+  // Mapping untuk istilah teknis umum ke bahasa Indonesia yang user-friendly
+  const featureMapping: Record<string, string> = {
+    // Demo & Testing
+    'demo_mode': 'Mode Demo',
+    'demo': 'Mode Demo',
+    
+    // Limits
+    'unlimited_menu': 'Menu Tidak Terbatas',
+    'unlimited_users': 'User Tidak Terbatas',
+    'unlimited_tables': 'Meja Tidak Terbatas',
+    'unlimited_categories': 'Kategori Tidak Terbatas',
+    'unlimited_orders': 'Order Tidak Terbatas',
+    'limited_to_30_days': 'Terbatas 30 Hari',
+    'limited_to_90_days': 'Terbatas 90 Hari',
+    
+    // User limits
+    'up_to_5_users': 'Hingga 5 User',
+    'up_to_10_users': 'Hingga 10 User',
+    'up_to_20_users': 'Hingga 20 User',
+    'up_to_50_users': 'Hingga 50 User',
+    
+    // Menu limits
+    'up_to_10_menus': 'Hingga 10 Menu',
+    'up_to_50_menus': 'Hingga 50 Menu',
+    'up_to_100_menus': 'Hingga 100 Menu',
+    
+    // Features
+    'kasir_dashboard': 'Dashboard Kasir',
+    'tenant_dashboard': 'Dashboard Admin',
+    'subscription_reporting': 'Laporan Subscription',
+    'sales_reporting': 'Laporan Penjualan',
+    'order_reporting': 'Laporan Order',
+    'export_excel': 'Export ke Excel',
+    'export_pdf': 'Export ke PDF',
+    'qr_code_generation': 'Generate QR Code',
+    'table_management': 'Manajemen Meja',
+    'menu_management': 'Manajemen Menu',
+    'category_management': 'Manajemen Kategori',
+    'user_management': 'Manajemen User',
+    'payment_integration': 'Integrasi Pembayaran',
+    'qris_support': 'Support QRIS',
+    'bank_transfer': 'Transfer Bank',
+    'custom_domain': 'Custom Domain',
+    'api_access': 'Akses API',
+    'priority_support': 'Priority Support',
+    'email_support': 'Email Support',
+    'phone_support': 'Phone Support',
+    'multi_outlet': 'Multi Outlet',
+    'inventory_management': 'Manajemen Stok',
+    'stock_tracking': 'Tracking Stok',
+    'low_stock_alerts': 'Notifikasi Stok Menipis',
+    'order_analytics': 'Analitik Order',
+    'customer_analytics': 'Analitik Pelanggan',
+    'revenue_analytics': 'Analitik Pendapatan',
+    'daily_reports': 'Laporan Harian',
+    'monthly_reports': 'Laporan Bulanan',
+    'yearly_reports': 'Laporan Tahunan',
+    'custom_reports': 'Laporan Custom',
+    'data_export': 'Export Data',
+    'backup_data': 'Backup Data',
+    'restore_data': 'Restore Data',
+  };
+
+  // Cek apakah ada mapping langsung
+  const lowerFeature = feature.toLowerCase().trim();
+  if (featureMapping[lowerFeature]) {
+    return featureMapping[lowerFeature];
+  }
+
+  // Cek apakah ada mapping dengan underscore (case-insensitive)
+  const normalizedFeature = feature.toLowerCase().replace(/\s+/g, '_');
+  if (featureMapping[normalizedFeature]) {
+    return featureMapping[normalizedFeature];
+  }
+
+  // Jika tidak ada mapping, transform dari format teknis ke user-friendly
+  // Contoh: "demo_mode" -> "Demo Mode", "unlimited_menu" -> "Unlimited Menu"
+  if (feature.includes('_')) {
+    return feature
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  // Jika sudah dalam format yang baik, return as-is
+  return feature;
+}
+
+/**
  * Format order code untuk display, maksimal 8-10 karakter
  * @param orderCode - Kode pesanan
  * @param maxLength - Panjang maksimal (default: 10)

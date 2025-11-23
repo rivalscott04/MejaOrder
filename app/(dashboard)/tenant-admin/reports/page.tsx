@@ -26,10 +26,12 @@ import {
   fetchOrders,
   fetchOrderDetail,
   fetchTenantSettings,
+  fetchUsageStats,
   getCurrentUser,
   type Order,
   type TenantSettings,
   type LoginResponse,
+  type UsageStats,
 } from "@/lib/api-client";
 import {
   exportToExcel,
@@ -54,6 +56,7 @@ export default function ReportsPage() {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<TenantSettings | null>(null);
   const [userData, setUserData] = useState<LoginResponse | null>(null);
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split("T")[0],
     end: new Date().toISOString().split("T")[0],
@@ -66,11 +69,12 @@ export default function ReportsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        // Fetch user data, orders and settings in parallel
-        const [userResponse, ordersResponse, settingsData] = await Promise.all([
+        // Fetch user data, orders, settings, and usage stats in parallel
+        const [userResponse, ordersResponse, settingsData, statsData] = await Promise.all([
           getCurrentUser().catch(() => null),
           fetchOrders({ all: true }).catch(() => ({ data: [] })),
           fetchTenantSettings().catch(() => null), // Don't fail if settings fetch fails
+          fetchUsageStats().catch(() => null), // Don't fail if stats fetch fails
         ]);
 
         if (userResponse) {
@@ -80,6 +84,9 @@ export default function ReportsPage() {
         setOrders(ordersResponse.data || []);
         if (settingsData) {
           setTenantSettings(settingsData);
+        }
+        if (statsData) {
+          setUsageStats(statsData);
         }
       } catch (err) {
         console.error("Failed to fetch data:", err);
@@ -124,13 +131,26 @@ export default function ReportsPage() {
     setWifiPassword("");
   };
 
-  const reportTabs: Array<{ id: ReportTab; label: string; icon: ReactNode }> = [
+  const allReportTabs: Array<{ id: ReportTab; label: string; icon: ReactNode }> = [
     { id: "financial", label: "Keuangan", icon: <DollarSign className="h-4 w-4" /> },
     { id: "sales", label: "Penjualan", icon: <TrendingUp className="h-4 w-4" /> },
     { id: "operational", label: "Operasional", icon: <Activity className="h-4 w-4" /> },
     { id: "analytics", label: "Analitik", icon: <PieChart className="h-4 w-4" /> },
     { id: "accounting", label: "Akuntansi", icon: <FileText className="h-4 w-4" /> },
   ];
+
+  // Filter tabs berdasarkan plan
+  const allowedTabs = usageStats?.allowed_report_tabs;
+  const reportTabs = allowedTabs && allowedTabs.length > 0
+    ? allReportTabs.filter((tab) => allowedTabs.includes(tab.id))
+    : allReportTabs; // Jika null atau empty, tampilkan semua (backward compatibility)
+
+  // Jika activeTab tidak ada di allowed tabs, set ke tab pertama yang diizinkan
+  useEffect(() => {
+    if (reportTabs.length > 0 && !reportTabs.find((tab) => tab.id === activeTab)) {
+      setActiveTab(reportTabs[0].id);
+    }
+  }, [reportTabs, activeTab]);
 
   // Export functions
 
@@ -1012,7 +1032,7 @@ export default function ReportsPage() {
             ) : (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <p className="text-sm text-amber-800">
-                  ⚠️ Persentase pajak belum diatur. Silakan atur di{" "}
+                  Persentase pajak belum diatur. Silakan atur di{" "}
                   <a href="/tenant-admin/settings" className="font-semibold underline">
                     Pengaturan
                   </a>
@@ -1118,22 +1138,59 @@ export default function ReportsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200">
-          {reportTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors",
-                activeTab === tab.id
-                  ? "border-emerald-500 text-emerald-600"
-                  : "border-transparent text-slate-600 hover:text-slate-900"
+        <div className="mb-6">
+          {reportTabs.length === 0 ? (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">
+                    Tidak Ada Akses Laporan
+                  </p>
+                  <p className="text-sm text-amber-700 mb-3">
+                    Paket Anda tidak memiliki akses ke laporan. Silakan upgrade paket untuk mengakses fitur laporan.
+                  </p>
+                  <a
+                    href="/tenant-admin/subscription"
+                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                  >
+                    <Package className="h-4 w-4" />
+                    Lihat Paket
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2 border-b border-slate-200">
+                {reportTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors",
+                      activeTab === tab.id
+                        ? "border-emerald-500 text-emerald-600"
+                        : "border-transparent text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              {allowedTabs && allowedTabs.length > 0 && allowedTabs.length < allReportTabs.length && (
+                <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200 p-3">
+                  <p className="text-xs text-blue-700">
+                    Paket Anda memiliki akses ke {allowedTabs.length} dari {allReportTabs.length} tab laporan. 
+                    <a href="/tenant-admin/subscription" className="font-semibold underline ml-1">
+                      Upgrade paket
+                    </a> untuk akses lengkap.
+                  </p>
+                </div>
               )}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+            </>
+          )}
         </div>
 
         {/* Report Content */}

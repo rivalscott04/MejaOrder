@@ -202,7 +202,7 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
           ) : dataError ? (
             <div className="py-8 space-y-4">
               <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
-                <p className="text-sm text-amber-800 font-semibold mb-2">⚠️ Gagal Memuat Data</p>
+                <p className="text-sm text-amber-800 font-semibold mb-2">Gagal Memuat Data</p>
                 <p className="text-sm text-amber-700">{dataError}</p>
               </div>
               <button
@@ -455,7 +455,7 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
                 </div>
                 {optionGroups.length === 0 && (
                   <p className="mt-2 text-xs text-slate-400">
-                    💡 <strong>Tips:</strong> Variasi berguna untuk menu yang punya pilihan seperti ukuran, suhu, level gula, atau topping. 
+                    <strong>Tips:</strong> Variasi berguna untuk menu yang punya pilihan seperti ukuran, suhu, level gula, atau topping. 
                     Buat variasi terlebih dahulu sebelum menambahkannya ke menu.
                   </p>
                 )}

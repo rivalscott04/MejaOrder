@@ -31,6 +31,8 @@ class UpdatePlanRequest extends FormRequest
             'max_menus' => ['nullable', 'integer', 'min:0'],
             'features_json' => ['nullable', 'array'],
             'features_json.*' => ['string'],
+            'allowed_report_tabs' => ['nullable', 'array'],
+            'allowed_report_tabs.*' => ['string', 'in:financial,sales,operational,analytics,accounting'],
             'discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_start_date' => ['nullable', 'date'],

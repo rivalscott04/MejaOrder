@@ -31,6 +31,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
     reset,
     control,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -43,6 +44,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
       max_users: null,
       max_menus: null,
       features_json: [],
+      allowed_report_tabs: [],
       discount_percentage: null,
       discount_type: null, // 'monthly' or 'yearly'
       discount_start_date: null,
@@ -74,6 +76,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
           max_users: plan.max_users,
           max_menus: plan.max_menus,
           features_json: plan.features_json || [],
+          allowed_report_tabs: (plan.allowed_report_tabs || []) as ("financial" | "sales" | "operational" | "analytics" | "accounting")[],
           discount_percentage: plan.discount_percentage ? parseFloat(plan.discount_percentage) : null,
           discount_type: plan.discount_type || null,
           discount_start_date: plan.discount_start_date || null,
@@ -90,6 +93,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
           max_users: null,
           max_menus: null,
           features_json: [],
+          allowed_report_tabs: [],
           discount_percentage: null,
           discount_type: null,
           discount_start_date: null,
@@ -110,6 +114,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
         max_users: data.max_users || null,
         max_menus: data.max_menus || null,
         features_json: data.features_json && data.features_json.length > 0 ? data.features_json : undefined,
+        allowed_report_tabs: data.allowed_report_tabs && data.allowed_report_tabs.length > 0 ? data.allowed_report_tabs : undefined,
         discount_percentage: data.discount_percentage || null,
         discount_type: data.discount_type || null,
         discount_start_date: data.discount_start_date || null,
@@ -466,6 +471,59 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
             </div>
           </div>
 
+          {/* Allowed Report Tabs */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">
+              Tab Laporan yang Diizinkan
+            </label>
+            <p className="mb-3 text-xs text-slate-500">
+              Pilih tab laporan yang bisa diakses tenant dengan paket ini. Kosongkan untuk mengizinkan semua tab.
+            </p>
+            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              {[
+                { id: "financial", label: "Keuangan", icon: "" },
+                { id: "sales", label: "Penjualan", icon: "" },
+                { id: "operational", label: "Operasional", icon: "" },
+                { id: "analytics", label: "Analitik", icon: "" },
+                { id: "accounting", label: "Akuntansi", icon: "" },
+              ].map((tab) => {
+                const allowedTabs = (watch("allowed_report_tabs") || []) as string[];
+                const tabId = tab.id as "financial" | "sales" | "operational" | "analytics" | "accounting";
+                return (
+                  <label
+                    key={tab.id}
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2.5 transition hover:border-emerald-300 hover:bg-emerald-50/50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={allowedTabs.includes(tab.id)}
+                      onChange={(e) => {
+                        const current = allowedTabs;
+                        if (e.target.checked) {
+                          setValue("allowed_report_tabs", [...current, tabId] as ("financial" | "sales" | "operational" | "analytics" | "accounting")[]);
+                        } else {
+                          setValue(
+                            "allowed_report_tabs",
+                            current.filter((t) => t !== tab.id) as ("financial" | "sales" | "operational" | "analytics" | "accounting")[]
+                          );
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700">
+                      {tab.label}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            {watch("allowed_report_tabs")?.length === 0 && (
+              <p className="mt-2 text-xs text-amber-600">
+                Tidak ada tab yang dipilih = semua tab diizinkan (unlimited)
+              </p>
+            )}
+          </div>
+
           {/* Features */}
           <div>
             <div className="mb-2 flex items-center justify-between">
@@ -491,7 +549,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                       "flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
                       errors.features_json?.[index] ? "border-rose-300" : ""
                     )}
-                    placeholder="Contoh: 100 order/hari"
+                    placeholder="Contoh: Menu Tidak Terbatas, Dashboard Kasir, Laporan Penjualan"
                   />
                   <button
                     type="button"

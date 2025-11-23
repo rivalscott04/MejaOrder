@@ -72,7 +72,7 @@ export function UpgradeModal({
         <div className="p-6 space-y-4">
           <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
             <p className="text-sm text-amber-800 font-semibold mb-2">
-              ⚠️ Paket {planName || "Anda"} Sudah Mencapai Limit
+              Paket {planName || "Anda"} Sudah Mencapai Limit
             </p>
             <p className="text-sm text-amber-700 mb-3">{message}</p>
             
@@ -96,7 +96,7 @@ export function UpgradeModal({
 
           <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
             <p className="text-sm font-semibold text-emerald-900 mb-2">
-              💡 Solusi
+              Solusi
             </p>
             <p className="text-sm text-emerald-700">
               Upgrade ke paket yang lebih tinggi untuk mendapatkan limit yang lebih besar dan fitur tambahan lainnya.

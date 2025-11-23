@@ -113,6 +113,13 @@ class PlanLimitService
 
         $plan = $subscription->plan;
         
+        // Get allowed report tabs, default to all if null
+        $allowedTabs = $plan->allowed_report_tabs;
+        if ($allowedTabs === null) {
+            // If null, allow all tabs (backward compatibility)
+            $allowedTabs = ['financial', 'sales', 'operational', 'analytics', 'accounting'];
+        }
+        
         return [
             'has_subscription' => true,
             'plan_name' => $plan->name,
@@ -128,6 +135,7 @@ class PlanLimitService
                 'is_unlimited' => $plan->max_users === null,
                 'percentage' => $plan->max_users ? min(100, ($tenant->users()->count() / $plan->max_users) * 100) : 0,
             ],
+            'allowed_report_tabs' => $allowedTabs,
         ];
     }
 }

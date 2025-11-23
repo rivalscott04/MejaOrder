@@ -967,6 +967,7 @@ export type UsageStats = {
     is_unlimited: boolean;
     percentage: number;
   };
+  allowed_report_tabs?: string[];
 };
 
 export async function fetchUsageStats(): Promise<UsageStats> {
@@ -1659,6 +1660,7 @@ export type Plan = {
   max_users: number | null;
   max_menus: number | null;
   features_json: string[] | null;
+  allowed_report_tabs: string[] | null;
   discount_percentage: string | null;
   discount_type: "monthly" | "yearly" | null;
   discount_start_date: string | null;
@@ -1685,6 +1687,7 @@ export type CreatePlanPayload = {
   max_users?: number | null;
   max_menus?: number | null;
   features_json?: string[];
+  allowed_report_tabs?: string[];
   discount_percentage?: number | null;
   discount_type?: "monthly" | "yearly" | null;
   discount_start_date?: string | null;

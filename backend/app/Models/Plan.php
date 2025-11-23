@@ -19,6 +19,7 @@ class Plan extends Model
         'max_users',
         'max_menus',
         'features_json',
+        'allowed_report_tabs',
         'discount_percentage',
         'discount_amount',
         'discount_start_date',
@@ -34,6 +35,7 @@ class Plan extends Model
         'discount_start_date' => 'date',
         'discount_end_date' => 'date',
         'features_json' => 'array',
+        'allowed_report_tabs' => 'array',
         'is_active' => 'boolean',
     ];
 
