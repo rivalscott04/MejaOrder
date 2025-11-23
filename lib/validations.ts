@@ -72,7 +72,7 @@ const userFormBaseSchema = z.object({
     .min(1, errorMessages.required("email"))
     .email(errorMessages.email),
   role: z.enum(["tenant_admin", "cashier"], {
-    errorMap: () => ({ message: errorMessages.required("role") }),
+    message: errorMessages.required("role"),
   }),
   is_active: z.boolean(),
 });
