@@ -17,6 +17,7 @@ class SubscriptionService
             ->where('tenant_id', $tenant->id)
             ->where('status', 'active')
             ->whereDate('end_date', '>=', now()->toDateString())
+            ->with('plan')
             ->latest('end_date')
             ->first();
     }

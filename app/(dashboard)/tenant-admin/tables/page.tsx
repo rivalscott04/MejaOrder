@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { tenantContext, tenantTables } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { QrCode, Plus, Edit, Trash2, Copy, Check, Loader2, Printer } from "lucide-react";
 import { TableFormModal } from "@/components/tenant/table-form-modal";
@@ -22,6 +21,7 @@ import {
   downloadTableQr,
   getCurrentUser,
   type Table,
+  type LoginResponse,
 } from "@/lib/api-client";
 
 export default function TablesPage() {
@@ -41,6 +41,7 @@ export default function TablesPage() {
   const [tenantSlug, setTenantSlug] = useState<string>("");
   const [tenantName, setTenantName] = useState<string>("");
   const [copiedTableId, setCopiedTableId] = useState<number | null>(null);
+  const [userData, setUserData] = useState<LoginResponse | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -71,20 +72,14 @@ export default function TablesPage() {
 
   const loadTenantSlug = async () => {
     try {
-      const userData = await getCurrentUser();
-      if (userData?.tenant?.slug) {
-        setTenantSlug(userData.tenant.slug);
-        setTenantName(userData.tenant.name || tenantContext.name);
-      } else {
-        // Fallback to mock data
-        setTenantSlug(tenantContext.slug);
-        setTenantName(tenantContext.name);
+      const data = await getCurrentUser();
+      setUserData(data);
+      if (data?.tenant?.slug) {
+        setTenantSlug(data.tenant.slug);
+        setTenantName(data.tenant.name || "");
       }
     } catch (err) {
       console.error("Failed to fetch tenant slug:", err);
-      // Fallback to mock data
-      setTenantSlug(tenantContext.slug);
-      setTenantName(tenantContext.name);
     }
   };
 
@@ -92,39 +87,12 @@ export default function TablesPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (!backendUrl) {
-        // Fallback to mock data
-        setTables(
-          tenantTables.map((t) => ({
-            id: t.id,
-            tenant_id: 1,
-            table_number: t.number,
-            qr_token: `qr-${t.id}-${Date.now()}`,
-            is_active: t.status === "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }))
-        );
-        return;
-      }
       const response = await fetchTables();
       setTables(response.data || []);
     } catch (err) {
       console.error("Failed to fetch tables:", err);
       setError(err instanceof Error ? err.message : "Gagal memuat meja");
-      // Fallback to mock data
-      setTables(
-        tenantTables.map((t) => ({
-          id: t.id,
-          tenant_id: 1,
-          table_number: t.number,
-          qr_token: `qr-${t.id}-${Date.now()}`,
-          is_active: t.status === "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }))
-      );
+      setTables([]);
     } finally {
       setIsLoading(false);
     }
@@ -230,12 +198,11 @@ export default function TablesPage() {
         setQrData(data);
         setShowQrModal(true);
       } else {
-        // Fallback: use mock data
         setQrData({
           table_number: table.table_number,
           qr_token: table.qr_token,
-          qr_url: `${window.location.origin}/o/${tenantContext.slug}/t/${table.qr_token}`,
-          tenant_name: tenantContext.name,
+          qr_url: `${window.location.origin}/o/${tenantSlug}/t/${table.qr_token}`,
+          tenant_name: tenantName,
         });
         setShowQrModal(true);
       }
@@ -280,7 +247,7 @@ export default function TablesPage() {
 
   const getQrUrl = (table: Table): string => {
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    return `${baseUrl}/o/${tenantSlug || tenantContext.slug}/t/${table.qr_token}`;
+    return `${baseUrl}/o/${tenantSlug}/t/${table.qr_token}`;
   };
 
   const handleCopyUrl = async (table: Table) => {
@@ -296,8 +263,11 @@ export default function TablesPage() {
     }
   };
 
+  const displayName = userData?.user.name || "Admin";
+  const displayEmail = userData?.user.email || "";
+
   return (
-    <DashboardLayout role="tenant-admin" userEmail="admin@brewhaven.id" userName="Admin BrewHaven">
+    <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
@@ -459,25 +429,11 @@ export default function TablesPage() {
           isOpen={showQrPrintAllModal}
           onClose={() => setShowQrPrintAllModal(false)}
           tables={tables.filter((t) => t.is_active)}
-          tenantName={tenantName || tenantContext.name}
-          tenantSlug={tenantSlug || tenantContext.slug}
+          tenantName={tenantName}
+          tenantSlug={tenantSlug}
           onGetQrData={async (tableId: number) => {
             try {
-              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-              if (backendUrl) {
-                return await printTableQr(tableId);
-              } else {
-                const table = tables.find((t) => t.id === tableId);
-                if (table) {
-                  return {
-                    table_number: table.table_number,
-                    qr_token: table.qr_token,
-                    qr_url: `${window.location.origin}/o/${tenantSlug || tenantContext.slug}/t/${table.qr_token}`,
-                    tenant_name: tenantName || tenantContext.name,
-                  };
-                }
-                throw new Error("Table not found");
-              }
+              return await printTableQr(tableId);
             } catch (err) {
               console.error("Failed to get QR data:", err);
               throw err;

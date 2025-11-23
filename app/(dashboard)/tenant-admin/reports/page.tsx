@@ -3,7 +3,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { tenantContext, cashierOrders } from "@/lib/mock-data";
 import { cn, currencyFormatter, formatTime, formatOrderCode } from "@/lib/utils";
 import {
   BarChart3,
@@ -27,8 +26,10 @@ import {
   fetchOrders,
   fetchOrderDetail,
   fetchTenantSettings,
+  getCurrentUser,
   type Order,
   type TenantSettings,
+  type LoginResponse,
 } from "@/lib/api-client";
 import {
   exportToExcel,
@@ -52,6 +53,7 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<TenantSettings | null>(null);
+  const [userData, setUserData] = useState<LoginResponse | null>(null);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split("T")[0],
     end: new Date().toISOString().split("T")[0],
@@ -64,43 +66,16 @@ export default function ReportsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        if (!backendUrl) {
-          // Fallback to mock data if backend URL not configured
-          setOrders(
-            cashierOrders.map((order) => ({
-              id: order.id,
-              tenant_id: 1,
-              table_id: 1,
-              order_code: order.orderCode,
-              total_amount: order.totalAmount.toString(),
-              payment_method: order.paymentMethod,
-              payment_status: order.paymentStatus,
-              order_status: order.orderStatus,
-              created_at: order.createdAt,
-              updated_at: order.createdAt,
-              table: { id: 1, number: order.tableNumber },
-            }))
-          );
-          setTenantSettings({
-            id: 1,
-            name: "BrewHaven",
-            slug: "brewhaven",
-            logo_url: null,
-            address: "Jl. Contoh No. 123, Jakarta",
-            phone: "+62 812-3456-7890",
-            timezone: "Asia/Jakarta",
-            tax_percentage: 11,
-            is_active: true,
-          });
-          return;
-        }
-
-        // Fetch orders and settings in parallel
-        const [ordersResponse, settingsData] = await Promise.all([
-          fetchOrders(),
+        // Fetch user data, orders and settings in parallel
+        const [userResponse, ordersResponse, settingsData] = await Promise.all([
+          getCurrentUser().catch(() => null),
+          fetchOrders({ all: true }).catch(() => ({ data: [] })),
           fetchTenantSettings().catch(() => null), // Don't fail if settings fetch fails
         ]);
+
+        if (userResponse) {
+          setUserData(userResponse);
+        }
 
         setOrders(ordersResponse.data || []);
         if (settingsData) {
@@ -109,22 +84,7 @@ export default function ReportsPage() {
       } catch (err) {
         console.error("Failed to fetch data:", err);
         setError(err instanceof Error ? err.message : "Gagal memuat data");
-        // Fallback to mock data on error
-        setOrders(
-          cashierOrders.map((order) => ({
-            id: order.id,
-            tenant_id: 1,
-            table_id: 1,
-            order_code: order.orderCode,
-            total_amount: order.totalAmount.toString(),
-            payment_method: order.paymentMethod,
-            payment_status: order.paymentStatus,
-            order_status: order.orderStatus,
-            created_at: order.createdAt,
-            updated_at: order.createdAt,
-            table: { id: 1, number: order.tableNumber },
-          }))
-        );
+        setOrders([]);
       } finally {
         setIsLoading(false);
       }
@@ -1102,8 +1062,11 @@ export default function ReportsPage() {
     );
   };
 
+  const displayName = userData?.user.name || "Admin";
+  const displayEmail = userData?.user.email || "";
+
   return (
-    <DashboardLayout role="tenant-admin" userEmail="admin@brewhaven.id" userName="Admin BrewHaven">
+    <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8 flex items-start justify-between">
@@ -1224,9 +1187,9 @@ export default function ReportsPage() {
                   };
                 }) || [],
               totalAmount: parseFloat(selectedOrder!.total_amount),
-              tenantName: tenantContext.name,
-              tenantAddress: "Jl. Contoh No. 123, Jakarta", // TODO: Get from tenant data
-              tenantPhone: "+62 812-3456-7890", // TODO: Get from tenant data
+              tenantName: tenantSettings?.name || userData?.tenant?.name || "",
+              tenantAddress: tenantSettings?.address || "",
+              tenantPhone: tenantSettings?.phone || "",
               wifiName: wifiName || undefined,
               wifiPassword: wifiPassword || undefined,
             }}

@@ -894,6 +894,11 @@ export type TenantSettings = {
     qris_image?: string | null;
   };
   is_active: boolean;
+  subscription?: {
+    plan: string;
+    status: string;
+    expires_at: string;
+  } | null;
 };
 
 export async function fetchTenantSettings(): Promise<TenantSettings> {

@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrentUser, logout, fetchOrders, type LoginResponse } from "@/lib/api-client";
@@ -140,6 +141,7 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
         badge: incompleteOrderCount > 0 ? incompleteOrderCount : undefined 
       },
       { id: "statistics", label: "Statistik", icon: <TrendingUp className="h-5 w-5" />, href: "/cashier/today" },
+      { id: "history", label: "Riwayat Pesanan", icon: <History className="h-5 w-5" />, href: "/cashier/history" },
       { id: "notifications", label: "Notifikasi", icon: <Bell className="h-5 w-5" />, href: "/cashier/notifications" },
       { id: "settings", label: "Pengaturan", icon: <Settings className="h-5 w-5" />, href: "/cashier/settings" },
     ],
@@ -147,10 +149,28 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
 
   const items = menuItems[role];
   const isActive = (href: string) => {
-    if (href === "/cashier") {
-      return pathname === "/cashier";
+    // Normalize pathname and href (remove trailing slashes)
+    const normalizedPathname = pathname.replace(/\/$/, "") || "/";
+    const normalizedHref = href.replace(/\/$/, "") || "/";
+    
+    // Special case for cashier root
+    if (normalizedHref === "/cashier") {
+      return normalizedPathname === "/cashier";
     }
-    return pathname === href || pathname.startsWith(href + "/");
+    
+    // Exact match
+    if (normalizedPathname === normalizedHref) {
+      return true;
+    }
+    
+    // For nested routes, check if pathname starts with href + "/"
+    // But make sure we don't match parent routes when on exact child routes
+    // e.g., /tenant-admin should not match when on /tenant-admin/menu
+    if (normalizedPathname.startsWith(normalizedHref + "/")) {
+      return true;
+    }
+    
+    return false;
   };
 
   // Get display values - prefer API data over props

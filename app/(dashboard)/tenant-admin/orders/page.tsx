@@ -4,19 +4,31 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { ClipboardList } from "lucide-react";
 import { TableSkeleton } from "@/components/shared/menu-skeleton";
+import { getCurrentUser, type LoginResponse } from "@/lib/api-client";
 
 export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<LoginResponse | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    const loadUserData = async () => {
+      try {
+        const data = await getCurrentUser();
+        setUserData(data);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUserData();
   }, []);
 
+  const displayName = userData?.user.name || "Admin";
+  const displayEmail = userData?.user.email || "";
+
   return (
-    <DashboardLayout role="tenant-admin" userEmail="admin@brewhaven.id" userName="Admin BrewHaven">
+    <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">

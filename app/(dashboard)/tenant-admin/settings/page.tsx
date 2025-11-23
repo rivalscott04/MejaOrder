@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Settings, Upload, Image as ImageIcon, Save, X, Plus, Trash2, Banknote, QrCode } from "lucide-react";
-import { fetchTenantSettings, updateTenantSettings, type TenantSettings } from "@/lib/api-client";
+import { fetchTenantSettings, updateTenantSettings, getCurrentUser, type TenantSettings, type LoginResponse } from "@/lib/api-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { settingsFormSchema, type SettingsFormData } from "@/lib/validations";
@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [userData, setUserData] = useState<LoginResponse | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,8 +43,18 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
+    loadUserData();
     loadSettings();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const data = await getCurrentUser();
+      setUserData(data);
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+    }
+  };
 
   const loadSettings = async () => {
     setIsLoading(true);
@@ -233,8 +244,11 @@ export default function SettingsPage() {
     setBanks(updated);
   };
 
+  const displayName = userData?.user.name || "Admin";
+  const displayEmail = userData?.user.email || "";
+
   return (
-    <DashboardLayout role="tenant-admin" userEmail="admin@brewhaven.id" userName="Admin BrewHaven">
+    <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-4xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">

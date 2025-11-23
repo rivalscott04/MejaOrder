@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UpdateTenantRequest;
+use App\Services\Tenant\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 
 class TenantController extends Controller
@@ -11,6 +12,21 @@ class TenantController extends Controller
     public function show(): JsonResponse
     {
         $tenant = tenant();
+        $subscriptionService = new SubscriptionService();
+        $currentSubscription = $subscriptionService->current($tenant);
+
+        $subscriptionInfo = null;
+        if ($currentSubscription) {
+            // Load plan relationship if not already loaded
+            if (!$currentSubscription->relationLoaded('plan')) {
+                $currentSubscription->load('plan');
+            }
+            $subscriptionInfo = [
+                'plan' => $currentSubscription->plan->name ?? '-',
+                'status' => ucfirst($currentSubscription->status),
+                'expires_at' => $currentSubscription->end_date->format('Y-m-d'),
+            ];
+        }
 
         return response()->json([
             'id' => $tenant->id,
@@ -26,6 +42,7 @@ class TenantController extends Controller
                 'qris_image' => null,
             ],
             'is_active' => $tenant->is_active,
+            'subscription' => $subscriptionInfo,
         ]);
     }
 
@@ -43,6 +60,18 @@ class TenantController extends Controller
 
         $tenant->update($data);
 
+        $subscriptionService = new SubscriptionService();
+        $currentSubscription = $subscriptionService->current($tenant);
+
+        $subscriptionInfo = null;
+        if ($currentSubscription) {
+            $subscriptionInfo = [
+                'plan' => $currentSubscription->plan->name ?? '-',
+                'status' => ucfirst($currentSubscription->status),
+                'expires_at' => $currentSubscription->end_date->format('Y-m-d'),
+            ];
+        }
+
         return response()->json([
             'id' => $tenant->id,
             'name' => $tenant->name,
@@ -57,6 +86,7 @@ class TenantController extends Controller
                 'qris_image' => null,
             ],
             'is_active' => $tenant->is_active,
+            'subscription' => $subscriptionInfo,
         ]);
     }
 }

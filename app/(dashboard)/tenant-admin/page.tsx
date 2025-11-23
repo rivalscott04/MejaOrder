@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { tenantContext, subscriptionCard } from "@/lib/mock-data";
 import { cn, currencyFormatter } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -16,41 +15,133 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { StatsGridSkeleton } from "@/components/shared/menu-skeleton";
+import { fetchOrders, fetchTenantSettings, getCurrentUser, type LoginResponse } from "@/lib/api-client";
+
+type TodayStats = {
+  orders: number;
+  revenue: number;
+  pendingPayments: number;
+};
+
+type SubscriptionInfo = {
+  plan: string;
+  status: string;
+  expiresAt: string;
+};
 
 export default function TenantAdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
-  const todayStats = {
-    orders: 24,
-    revenue: 1250000,
-    pendingPayments: 3,
-  };
+  const [todayStats, setTodayStats] = useState<TodayStats>({
+    orders: 0,
+    revenue: 0,
+    pendingPayments: 0,
+  });
+  const [tenantName, setTenantName] = useState<string>("");
+  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo>({
+    plan: "-",
+    status: "-",
+    expiresAt: "-",
+  });
+  const [userData, setUserData] = useState<LoginResponse | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split("T")[0];
+      
+      // Fetch today's orders
+      const ordersResponse = await fetchOrders({ date: today, all: true });
+      const todayOrders = ordersResponse.data;
+      
+      // Calculate stats
+      const orders = todayOrders.length;
+      const revenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || "0"), 0);
+      const pendingPayments = todayOrders.filter(
+        (order) => order.payment_status === "waiting_verification" || order.payment_status === "unpaid"
+      ).length;
+      
+      setTodayStats({ orders, revenue, pendingPayments });
+      
+      // Fetch tenant settings and user data
+      const [settings, user] = await Promise.all([
+        fetchTenantSettings().catch(() => null),
+        getCurrentUser().catch(() => null),
+      ]);
+      
+      if (settings) {
+        setTenantName(settings.name);
+        
+        // Get subscription info from settings
+        if (settings.subscription) {
+          setSubscriptionInfo({
+            plan: settings.subscription.plan,
+            status: settings.subscription.status,
+            expiresAt: settings.subscription.expires_at,
+          });
+        } else {
+          setSubscriptionInfo({
+            plan: "-",
+            status: "Tidak ada",
+            expiresAt: "-",
+          });
+        }
+      }
+      
+      if (user) {
+        setUserData(user);
+        if (user.tenant && !settings) {
+          setTenantName(user.tenant.name);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
+    } finally {
       setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    }
   }, []);
 
+  useEffect(() => {
+    loadData();
+    
+    // Refresh data every 30 seconds
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  const displayName = userData?.user.name || "Admin";
+  const displayEmail = userData?.user.email || "";
+
   return (
-    <DashboardLayout role="tenant-admin" userEmail="admin@brewhaven.id" userName="Admin BrewHaven">
+    <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">{tenantContext.name}</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
+            {tenantName || "Loading..."}
+          </h1>
           <p className="mt-2 text-sm text-slate-600">
             Kelola menu, meja, pengguna, dan monitor aktivitas operasional
           </p>
         </div>
 
         {/* Content */}
-        <OverviewTab stats={todayStats} isLoading={isLoading} />
+        <OverviewTab stats={todayStats} isLoading={isLoading} subscriptionInfo={subscriptionInfo} />
       </div>
     </DashboardLayout>
   );
 }
 
-function OverviewTab({ stats, isLoading }: { stats: { orders: number; revenue: number; pendingPayments: number }; isLoading: boolean }) {
+function OverviewTab({ 
+  stats, 
+  isLoading, 
+  subscriptionInfo 
+}: { 
+  stats: TodayStats; 
+  isLoading: boolean;
+  subscriptionInfo: SubscriptionInfo;
+}) {
   return (
     <div className="space-y-4 lg:space-y-6">
       {/* Today Stats */}
@@ -113,15 +204,15 @@ function OverviewTab({ stats, isLoading }: { stats: { orders: number; revenue: n
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <p className="text-xs text-slate-500">Plan</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">{subscriptionCard.plan}</p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">{subscriptionInfo.plan}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Status</p>
-              <p className="mt-1 text-lg font-semibold text-emerald-600">{subscriptionCard.status}</p>
+              <p className="mt-1 text-lg font-semibold text-emerald-600">{subscriptionInfo.status}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Berlaku Hingga</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">{subscriptionCard.expiresAt}</p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">{subscriptionInfo.expiresAt}</p>
             </div>
           </div>
           <div className="mt-4 flex gap-3">

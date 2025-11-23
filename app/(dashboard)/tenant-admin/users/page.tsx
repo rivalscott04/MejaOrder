@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { tenantUsers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Users, Plus, Edit as EditIcon, Power, PowerOff, Loader2 } from "lucide-react";
 import { UserFormModal } from "@/components/tenant/user-form-modal";
@@ -14,13 +13,16 @@ import {
   createUser,
   updateUser,
   toggleUserStatus,
+  getCurrentUser,
   type TenantUser,
+  type LoginResponse,
 } from "@/lib/api-client";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<LoginResponse | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TenantUser | null>(null);
   const [isToggling, setIsToggling] = useState<number | null>(null);
@@ -36,48 +38,29 @@ export default function UsersPage() {
   });
 
   useEffect(() => {
+    loadUserData();
     loadUsers();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const data = await getCurrentUser();
+      setUserData(data);
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+    }
+  };
 
   const loadUsers = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (!backendUrl) {
-        // Fallback to mock data
-        setUsers(
-          tenantUsers.map((u) => ({
-            id: u.id,
-            tenant_id: 1,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            is_active: u.status === "active",
-            created_at: u.lastActive,
-            updated_at: u.lastActive,
-          }))
-        );
-        return;
-      }
       const response = await fetchUsers();
       setUsers(response.data || []);
     } catch (err) {
       console.error("Failed to fetch users:", err);
       setError(err instanceof Error ? err.message : "Gagal memuat pengguna");
-      // Fallback to mock data
-      setUsers(
-        tenantUsers.map((u) => ({
-          id: u.id,
-          tenant_id: 1,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          is_active: u.status === "active",
-          created_at: u.lastActive,
-          updated_at: u.lastActive,
-        }))
-      );
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -123,8 +106,11 @@ export default function UsersPage() {
     }
   };
 
+  const displayName = userData?.user.name || "Admin";
+  const displayEmail = userData?.user.email || "";
+
   return (
-    <DashboardLayout role="tenant-admin" userEmail="admin@brewhaven.id" userName="Admin BrewHaven">
+    <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">

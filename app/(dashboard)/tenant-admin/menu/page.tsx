@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { tenantContext, tenantMenuGrid } from "@/lib/mock-data";
 import { cn, currencyFormatter, calculateMenuBadges, isBestSellerMenu, isRecommendedMenu } from "@/lib/utils";
 import { MenuSquare, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { MenuFormModal } from "@/components/tenant/menu-form-modal";
@@ -16,8 +15,10 @@ import {
   deleteMenu,
   toggleMenuAvailability,
   fetchCategories,
+  getCurrentUser,
   type Menu,
   type Category,
+  type LoginResponse,
 } from "@/lib/api-client";
 import { ToggleSwitch } from "@/components/shared/toggle-switch";
 import { MenuGridSkeleton } from "@/components/shared/menu-skeleton";
@@ -29,6 +30,7 @@ export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<LoginResponse | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
@@ -72,9 +74,19 @@ export default function MenuPage() {
   });
 
   useEffect(() => {
+    loadUserData();
     loadMenus();
     loadCategories();
   }, [currentPage]);
+
+  const loadUserData = async () => {
+    try {
+      const data = await getCurrentUser();
+      setUserData(data);
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+    }
+  };
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -94,34 +106,6 @@ export default function MenuPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (!backendUrl) {
-        // Fallback to mock data
-        const mockMenus = tenantMenuGrid.map((m) => ({
-          id: m.id,
-          tenant_id: m.tenantId,
-          category_id: m.categoryId,
-          name: m.name,
-          description: m.description,
-          price: m.price.toString(),
-          image_url: m.imageUrl,
-          is_available: m.isAvailable,
-          stock: null,
-          sku: null,
-          option_groups: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }));
-        setMenus(mockMenus);
-        setPagination({
-          current_page: 1,
-          last_page: 1,
-          per_page: 20,
-          total: mockMenus.length,
-        });
-        setIsLoading(false);
-        return;
-      }
       const response = await fetchMenus(page, 20);
       setMenus(response.data || []);
       setPagination({
@@ -133,28 +117,12 @@ export default function MenuPage() {
     } catch (err) {
       console.error("Failed to fetch menus:", err);
       setError(err instanceof Error ? err.message : "Gagal memuat menu");
-      // Fallback to mock data
-      const mockMenus = tenantMenuGrid.map((m) => ({
-        id: m.id,
-        tenant_id: m.tenantId,
-        category_id: m.categoryId,
-        name: m.name,
-        description: m.description,
-        price: m.price.toString(),
-        image_url: m.imageUrl,
-        is_available: m.isAvailable,
-        stock: null,
-        sku: null,
-        option_groups: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
-      setMenus(mockMenus);
+      setMenus([]);
       setPagination({
         current_page: 1,
         last_page: 1,
         per_page: 20,
-        total: mockMenus.length,
+        total: 0,
       });
     } finally {
       setIsLoading(false);
@@ -276,8 +244,11 @@ export default function MenuPage() {
     return badges;
   };
 
+  const displayName = userData?.user.name || "Admin";
+  const displayEmail = userData?.user.email || "";
+
   return (
-    <DashboardLayout role="tenant-admin" userEmail="admin@brewhaven.id" userName="Admin BrewHaven">
+    <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
