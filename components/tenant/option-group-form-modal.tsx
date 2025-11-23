@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { X, Plus, Trash2, GripVertical } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatPriceInput, parsePriceInput } from "@/lib/utils";
 import type { OptionGroup, OptionItem, CreateOptionGroupPayload, UpdateOptionGroupPayload, CreateOptionItemPayload, UpdateOptionItemPayload } from "@/lib/api-client";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -291,13 +291,36 @@ export function OptionGroupFormModal({ isOpen, onClose, onSubmit, optionGroup }:
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
                         Harga Tambahan
                       </label>
-                      <input
-                        type="number"
-                        min="0"
-                        {...register(`items.${index}.extra_price`, { valueAsNumber: true })}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
-                        placeholder="0"
+                      <Controller
+                        name={`items.${index}.extra_price`}
+                        control={control}
+                        render={({ field }) => (
+                          <input
+                            type="text"
+                            value={formatPriceInput(field.value)}
+                            onChange={(e) => {
+                              const price = parsePriceInput(e.target.value);
+                              field.onChange(price);
+                            }}
+                            onBlur={() => {
+                              const price = watch(`items.${index}.extra_price`);
+                              if (price < 0) {
+                                field.onChange(0);
+                              }
+                            }}
+                            className={cn(
+                              "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none",
+                              errors.items?.[index]?.extra_price ? "border-rose-300" : ""
+                            )}
+                            placeholder="0"
+                          />
+                        )}
                       />
+                      {errors.items?.[index]?.extra_price && (
+                        <p className="mt-1 text-xs text-rose-600">
+                          {errors.items[index]?.extra_price?.message}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-end">
                       <button
