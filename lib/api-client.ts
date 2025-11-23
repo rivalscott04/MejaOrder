@@ -897,6 +897,12 @@ export type TenantSettings = {
     }>;
     qris_image?: string | null;
   };
+  maintenance_mode?: {
+    is_enabled: boolean;
+    message: string | null;
+    image_url: string | null;
+    estimated_completion_at: string | null;
+  };
   is_active: boolean;
   subscription?: {
     plan: string;
@@ -964,6 +970,12 @@ export type UpdateTenantSettingsPayload = {
       account_name: string;
     }>;
     qris_image?: string | null;
+  };
+  maintenance_mode?: {
+    is_enabled?: boolean;
+    message?: string | null;
+    image_url?: string | null;
+    estimated_completion_at?: string | null;
   };
 };
 

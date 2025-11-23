@@ -8,6 +8,7 @@ use App\Http\Controllers\Customer\PaymentController as CustomerPaymentController
 use App\Http\Controllers\Payment\PaymentCallbackController;
 use App\Http\Controllers\Payment\PaymentProofController;
 use App\Http\Controllers\SuperAdmin\PlanController as SuperAdminPlanController;
+use App\Http\Controllers\SuperAdmin\SettingsController as SuperAdminSettingsController;
 use App\Http\Controllers\SuperAdmin\TenantController as SuperAdminTenantController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ImageUploadController;
@@ -45,13 +46,33 @@ Route::post('payment/callback', [PaymentCallbackController::class, 'handle']);
  * Public customer APIs (QR flow).
  */
 Route::prefix('public/{tenant_slug}')
-    ->middleware('tenant.context')
+    ->middleware(['tenant.context', \App\Http\Middleware\CheckMaintenanceMode::class])
     ->group(function () {
         Route::get('tables/{qr_token}/menus', MenuController::class);
         Route::get('payment-settings', [CustomerPaymentController::class, 'getPaymentSettings']);
         Route::post('orders', [CustomerOrderController::class, 'store']);
         Route::get('orders/{order_code}', [CustomerOrderController::class, 'show']);
         Route::post('orders/{order_code}/upload-proof', [CustomerPaymentController::class, 'uploadProof']);
+        Route::get('maintenance-status', function () {
+            $tenant = app('currentTenant');
+            if (!$tenant) {
+                return response()->json(['maintenance_mode' => false], 404);
+            }
+            
+            $maintenanceMode = $tenant->maintenance_mode ?? [
+                'is_enabled' => false,
+                'message' => null,
+                'image_url' => null,
+                'estimated_completion_at' => null,
+            ];
+            
+            return response()->json([
+                'maintenance_mode' => $maintenanceMode['is_enabled'] ?? false,
+                'message' => $maintenanceMode['message'] ?? null,
+                'image_url' => $maintenanceMode['image_url'] ?? null,
+                'estimated_completion_at' => $maintenanceMode['estimated_completion_at'] ?? null,
+            ]);
+        });
     });
 
 /**
@@ -134,5 +155,7 @@ Route::prefix('admin')
         Route::apiResource('tenants', SuperAdminTenantController::class);
         Route::post('tenants/{tenant}/toggle-status', [SuperAdminTenantController::class, 'toggleStatus']);
         Route::apiResource('plans', SuperAdminPlanController::class);
+        Route::get('settings/maintenance-mode', [SuperAdminSettingsController::class, 'getMaintenanceMode']);
+        Route::put('settings/maintenance-mode', [SuperAdminSettingsController::class, 'updateMaintenanceMode']);
     });
 

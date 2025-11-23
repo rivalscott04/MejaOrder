@@ -74,6 +74,11 @@ export default function SettingsPage() {
       // Load payment settings
       setBanks(data.payment_settings?.banks || []);
       setQrisImagePreview(data.payment_settings?.qris_image || null);
+      
+      // Load maintenance mode settings
+      if (data.maintenance_mode) {
+        // Maintenance mode will be handled separately
+      }
     } catch (err) {
       console.error("Failed to load settings:", err);
       setError("Gagal memuat pengaturan tenant");
@@ -171,6 +176,7 @@ export default function SettingsPage() {
           banks: banks.filter(b => b.bank && b.account_number && b.account_name),
           qris_image: qrisImageUrl,
         },
+        maintenance_mode: settings?.maintenance_mode || undefined,
       });
 
       setSettings(updated);
@@ -526,6 +532,90 @@ export default function SettingsPage() {
                 <p className="text-sm text-emerald-800">{success}</p>
               </div>
             )}
+
+            {/* Maintenance Mode */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Maintenance Mode</h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Aktifkan maintenance mode untuk menampilkan halaman maintenance ke customer
+                  </p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={settings?.maintenance_mode?.is_enabled || false}
+                    onChange={(e) => {
+                      if (settings) {
+                        setSettings({
+                          ...settings,
+                          maintenance_mode: {
+                            ...(settings.maintenance_mode || {
+                              is_enabled: false,
+                              message: null,
+                              image_url: null,
+                              estimated_completion_at: null,
+                            }),
+                            is_enabled: e.target.checked,
+                          },
+                        });
+                      }
+                    }}
+                    className="peer sr-only"
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-500 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300"></div>
+                </label>
+              </div>
+
+              {settings?.maintenance_mode?.is_enabled && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Pesan Maintenance</label>
+                    <textarea
+                      value={settings.maintenance_mode.message || ""}
+                      onChange={(e) => {
+                        if (settings) {
+                          setSettings({
+                            ...settings,
+                            maintenance_mode: {
+                              ...settings.maintenance_mode,
+                              message: e.target.value,
+                            },
+                          });
+                        }
+                      }}
+                      placeholder="Contoh: Sistem sedang dalam pemeliharaan. Kami akan kembali segera."
+                      rows={3}
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Estimasi Waktu Selesai</label>
+                    <input
+                      type="datetime-local"
+                      value={
+                        settings.maintenance_mode.estimated_completion_at
+                          ? new Date(settings.maintenance_mode.estimated_completion_at).toISOString().slice(0, 16)
+                          : ""
+                      }
+                      onChange={(e) => {
+                        if (settings) {
+                          setSettings({
+                            ...settings,
+                            maintenance_mode: {
+                              ...settings.maintenance_mode,
+                              estimated_completion_at: e.target.value ? new Date(e.target.value).toISOString() : null,
+                            },
+                          });
+                        }
+                      }}
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Submit Button */}
             <div className="flex justify-end">

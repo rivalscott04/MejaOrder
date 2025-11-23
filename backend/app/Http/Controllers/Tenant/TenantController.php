@@ -42,6 +42,12 @@ class TenantController extends Controller
                 'banks' => [],
                 'qris_image' => null,
             ],
+            'maintenance_mode' => $tenant->maintenance_mode ?? [
+                'is_enabled' => false,
+                'message' => null,
+                'image_url' => null,
+                'estimated_completion_at' => null,
+            ],
             'is_active' => $tenant->is_active,
             'subscription' => $subscriptionInfo,
         ]);
@@ -57,6 +63,17 @@ class TenantController extends Controller
         if (isset($data['payment_settings'])) {
             $currentSettings = $tenant->payment_settings ?? ['banks' => [], 'qris_image' => null];
             $data['payment_settings'] = array_merge($currentSettings, $data['payment_settings']);
+        }
+
+        // Handle maintenance_mode separately to merge with existing
+        if (isset($data['maintenance_mode'])) {
+            $currentMaintenance = $tenant->maintenance_mode ?? [
+                'is_enabled' => false,
+                'message' => null,
+                'image_url' => null,
+                'estimated_completion_at' => null,
+            ];
+            $data['maintenance_mode'] = array_merge($currentMaintenance, $data['maintenance_mode']);
         }
 
         $tenant->update($data);
@@ -85,6 +102,12 @@ class TenantController extends Controller
             'payment_settings' => $tenant->payment_settings ?? [
                 'banks' => [],
                 'qris_image' => null,
+            ],
+            'maintenance_mode' => $tenant->maintenance_mode ?? [
+                'is_enabled' => false,
+                'message' => null,
+                'image_url' => null,
+                'estimated_completion_at' => null,
             ],
             'is_active' => $tenant->is_active,
             'subscription' => $subscriptionInfo,

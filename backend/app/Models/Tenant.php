@@ -19,12 +19,14 @@ class Tenant extends Model
         'timezone',
         'tax_percentage',
         'payment_settings',
+        'maintenance_mode',
         'is_active',
     ];
 
     protected $casts = [
         'tax_percentage' => 'decimal:2',
         'payment_settings' => 'array',
+        'maintenance_mode' => 'array',
         'is_active' => 'boolean',
     ];
 
