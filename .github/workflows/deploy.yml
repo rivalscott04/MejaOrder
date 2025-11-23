@@ -26,33 +26,56 @@ jobs:
             
             # Navigate to project directory
             PROJECT_PATH="${{ secrets.PROJECT_PATH || '/var/www/MejaOrder' }}"
-            echo "Navigating to: $PROJECT_PATH"
-            cd "$PROJECT_PATH" || exit 1
+            echo "Checking project path: $PROJECT_PATH"
+            
+            # Check if directory exists
+            if [ ! -d "$PROJECT_PATH" ]; then
+              echo "Error: Directory $PROJECT_PATH does not exist!"
+              echo "Current directory: $(pwd)"
+              echo "Listing /var/www contents:"
+              ls -la /var/www/ || echo "Cannot list /var/www"
+              exit 1
+            fi
+            
+            echo "Directory exists, navigating..."
+            cd "$PROJECT_PATH"
+            echo "Current directory: $(pwd)"
             
             # Pull latest code
             echo "Pulling latest code from master..."
-            git pull origin master || exit 1
+            git pull origin master || {
+              echo "Git pull failed!"
+              echo "Current git status:"
+              git status || true
+              exit 1
+            }
+            echo "Code pulled successfully"
             
             # 1. Build frontend
-            echo "Building frontend..."
+            echo "Lagi build frontend nih..."
             npm run build:prod || exit 1
+            echo "Frontend build selesai!"
             
             # 2. Restart service
-            echo "Restarting order.service..."
+            echo "Restart service order..."
             sudo systemctl restart order.service || exit 1
+            echo "Service udah di-restart"
             
             # 3. Navigate to backend folder
-            echo "Navigating to backend folder..."
+            echo "Masuk ke folder backend..."
             cd backend || exit 1
             
             # 4. Run migrations
-            echo "Running migrations..."
+            echo "Jalanin migrations..."
             php artisan migrate --force || exit 1
+            echo "Migrations selesai"
             
             # 5. Clear config and cache
-            echo "Clearing config and cache..."
+            echo "Bersihin config sama cache..."
             php artisan config:clear || exit 1
             php artisan cache:clear || exit 1
+            echo "Config dan cache udah dibersihin"
             
-            echo "✅ Backend Frontend Sudah siap boskuu"
+            echo ""
+            echo "SELESAI! Backend Frontend udah siap semua boskuu!"
 
