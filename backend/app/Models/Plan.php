@@ -19,12 +19,20 @@ class Plan extends Model
         'max_users',
         'max_menus',
         'features_json',
+        'discount_percentage',
+        'discount_amount',
+        'discount_start_date',
+        'discount_end_date',
         'is_active',
     ];
 
     protected $casts = [
         'price_monthly' => 'decimal:2',
         'price_yearly' => 'decimal:2',
+        'discount_percentage' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'discount_start_date' => 'date',
+        'discount_end_date' => 'date',
         'features_json' => 'array',
         'is_active' => 'boolean',
     ];

@@ -155,3 +155,98 @@ export const settingsFormSchema = z.object({
 
 export type SettingsFormData = z.infer<typeof settingsFormSchema>;
 
+// Schema untuk Tenant Form (Super Admin)
+const tenantFormBaseSchema = z.object({
+  name: z
+    .string()
+    .min(1, errorMessages.required("nama tenant"))
+    .min(2, "Nama tenant minimal 2 karakter")
+    .max(150, errorMessages.maxLength("Nama tenant", 150)),
+  slug: z
+    .string()
+    .min(1, errorMessages.required("slug tenant"))
+    .regex(/^[a-z0-9-]+$/, "Slug hanya boleh huruf kecil, angka, dan tanda hubung (-)")
+    .max(150, errorMessages.maxLength("Slug", 150)),
+  logo_url: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  phone: z.string().optional().nullable().max(50, errorMessages.maxLength("Nomor telepon", 50)),
+  timezone: z.string().optional().max(50, errorMessages.maxLength("Timezone", 50)),
+  is_active: z.boolean(),
+});
+
+export const createTenantFormSchema = tenantFormBaseSchema;
+export const updateTenantFormSchema = tenantFormBaseSchema.partial().extend({
+  name: z
+    .string()
+    .min(2, "Nama tenant minimal 2 karakter")
+    .max(150, errorMessages.maxLength("Nama tenant", 150))
+    .optional(),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, "Slug hanya boleh huruf kecil, angka, dan tanda hubung (-)")
+    .max(150, errorMessages.maxLength("Slug", 150))
+    .optional(),
+});
+
+export type TenantFormData = z.infer<typeof createTenantFormSchema> | z.infer<typeof updateTenantFormSchema>;
+
+// Schema untuk Plan/Pricing Form (Super Admin)
+const planFormBaseSchema = z.object({
+  name: z
+    .string()
+    .min(1, errorMessages.required("nama plan"))
+    .min(2, "Nama plan minimal 2 karakter")
+    .max(100, errorMessages.maxLength("Nama plan", 100)),
+  description: z.string().optional().nullable(),
+  price_monthly: z
+    .number()
+    .min(0, "Harga bulanan tidak boleh negatif")
+    .min(1, errorMessages.required("harga bulanan")),
+  price_yearly: z.number().min(0, "Harga tahunan tidak boleh negatif").optional().nullable(),
+  max_tenants: z.number().min(0, "Maksimal tenant tidak boleh negatif").optional().nullable(),
+  max_users: z.number().min(0, "Maksimal user tidak boleh negatif").optional().nullable(),
+  max_menus: z.number().min(0, "Maksimal menu tidak boleh negatif").optional().nullable(),
+  features_json: z.array(z.string()).optional().nullable(),
+  discount_percentage: z
+    .number()
+    .min(0, "Diskon persentase tidak boleh negatif")
+    .max(100, "Diskon persentase maksimal 100%")
+    .optional()
+    .nullable(),
+  discount_amount: z
+    .number()
+    .min(0, "Diskon nominal tidak boleh negatif")
+    .optional()
+    .nullable(),
+  discount_start_date: z.string().optional().nullable(),
+  discount_end_date: z.string().optional().nullable(),
+  is_active: z.boolean(),
+}).refine(
+  (data) => {
+    // Jika discount_end_date ada, harus setelah discount_start_date
+    if (data.discount_start_date && data.discount_end_date) {
+      return new Date(data.discount_end_date) >= new Date(data.discount_start_date);
+    }
+    return true;
+  },
+  {
+    message: "Tanggal akhir diskon harus setelah tanggal mulai",
+    path: ["discount_end_date"],
+  }
+);
+
+export const createPlanFormSchema = planFormBaseSchema;
+export const updatePlanFormSchema = planFormBaseSchema.partial().extend({
+  name: z
+    .string()
+    .min(2, "Nama plan minimal 2 karakter")
+    .max(100, errorMessages.maxLength("Nama plan", 100))
+    .optional(),
+  price_monthly: z
+    .number()
+    .min(0, "Harga bulanan tidak boleh negatif")
+    .optional(),
+});
+
+export type PlanFormData = z.infer<typeof createPlanFormSchema> | z.infer<typeof updatePlanFormSchema>;
+

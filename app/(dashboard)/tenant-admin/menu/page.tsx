@@ -5,7 +5,7 @@ import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { tenantContext, tenantMenuGrid } from "@/lib/mock-data";
 import { cn, currencyFormatter, calculateMenuBadges, isBestSellerMenu, isRecommendedMenu } from "@/lib/utils";
-import { MenuSquare, Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { MenuSquare, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { MenuFormModal } from "@/components/tenant/menu-form-modal";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { AlertModal } from "@/components/shared/alert-modal";
@@ -32,6 +32,8 @@ export default function MenuPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [isToggling, setIsToggling] = useState<number | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<number | "all">("all");
   const [badgeFilter, setBadgeFilter] = useState<BadgeFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -189,11 +191,12 @@ export default function MenuPage() {
       message: "Apakah Anda yakin ingin menghapus menu ini? Tindakan ini tidak dapat dibatalkan.",
       variant: "danger",
       onConfirm: async () => {
-        setConfirmModal({ ...confirmModal, isOpen: false });
+        setIsConfirmingDelete(true);
         setIsDeleting(menuId);
         try {
           await deleteMenu(menuId);
           await loadMenus(currentPage);
+          setConfirmModal({ ...confirmModal, isOpen: false });
           setAlertModal({
             isOpen: true,
             title: "Berhasil",
@@ -209,12 +212,14 @@ export default function MenuPage() {
           });
         } finally {
           setIsDeleting(null);
+          setIsConfirmingDelete(false);
         }
       },
     });
   };
 
   const handleToggle = async (menuId: number) => {
+    setIsToggling(menuId);
     try {
       await toggleMenuAvailability(menuId);
       await loadMenus(currentPage);
@@ -225,6 +230,8 @@ export default function MenuPage() {
         message: err instanceof Error ? err.message : "Gagal mengubah status menu. Silakan coba lagi.",
         variant: "error",
       });
+    } finally {
+      setIsToggling(null);
     }
   };
 
@@ -417,6 +424,7 @@ export default function MenuPage() {
                             checked={menu.is_available}
                             onChange={() => handleToggle(menu.id)}
                             size="sm"
+                            disabled={isToggling === menu.id}
                           />
                         </div>
                         <p className="text-[10px] text-slate-500 mt-1">
@@ -434,9 +442,13 @@ export default function MenuPage() {
                         <button
                           onClick={() => handleDelete(menu.id)}
                           disabled={isDeleting === menu.id}
-                          className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                          className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 flex items-center justify-center"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {isDeleting === menu.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -540,11 +552,16 @@ export default function MenuPage() {
 
         <ConfirmModal
           isOpen={confirmModal.isOpen}
-          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+          onClose={() => {
+            if (!isConfirmingDelete) {
+              setConfirmModal({ ...confirmModal, isOpen: false });
+            }
+          }}
           onConfirm={confirmModal.onConfirm}
           title={confirmModal.title}
           message={confirmModal.message}
           variant={confirmModal.variant}
+          isLoading={isConfirmingDelete}
         />
 
         <AlertModal

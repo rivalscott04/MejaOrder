@@ -5,7 +5,7 @@ import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { tenantUsers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { Users, Plus, Edit as EditIcon, Power, PowerOff } from "lucide-react";
+import { Users, Plus, Edit as EditIcon, Power, PowerOff, Loader2 } from "lucide-react";
 import { UserFormModal } from "@/components/tenant/user-form-modal";
 import { AlertModal } from "@/components/shared/alert-modal";
 import { TableSkeleton } from "@/components/shared/menu-skeleton";
@@ -23,6 +23,7 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TenantUser | null>(null);
+  const [isToggling, setIsToggling] = useState<number | null>(null);
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -106,6 +107,7 @@ export default function UsersPage() {
   };
 
   const handleToggleStatus = async (userId: number) => {
+    setIsToggling(userId);
     try {
       await toggleUserStatus(userId);
       await loadUsers();
@@ -116,6 +118,8 @@ export default function UsersPage() {
         message: err instanceof Error ? err.message : "Gagal mengubah status pengguna. Silakan coba lagi.",
         variant: "error",
       });
+    } finally {
+      setIsToggling(null);
     }
   };
 
@@ -195,9 +199,15 @@ export default function UsersPage() {
                           </button>
                           <button
                             onClick={() => handleToggleStatus(user.id)}
-                            className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-700"
+                            disabled={isToggling === user.id}
+                            className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {user.is_active ? (
+                            {isToggling === user.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Memproses...
+                              </>
+                            ) : user.is_active ? (
                               <>
                                 <PowerOff className="h-4 w-4" />
                                 Nonaktifkan

@@ -457,8 +457,7 @@ export function CustomerExperience({
           <p className="text-sm text-slate-500">
             Selamat datang! Jelajahi menu kami, pilih hidangan favorit Anda, dan sesuaikan sesuai selera. Pesanan Anda akan segera diproses oleh tim kami.
           </p>
-          <div className="grid gap-3 text-xs sm:grid-cols-3">
-            <InfoChip label="Kode Meja" value={table.qrToken} />
+          <div className="grid gap-3 text-xs sm:grid-cols-2">
             <InfoChip label="Instruksi" value="Pilih menu → Keranjang → Bayar" />
             {table.note && <InfoChip label="Catatan Zona" value={table.note} />}
           </div>

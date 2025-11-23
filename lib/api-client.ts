@@ -1042,3 +1042,346 @@ export async function fetchOptionGroups(): Promise<OptionGroup[]> {
   return response.json();
 }
 
+// ==================== SUPER ADMIN API ====================
+
+// Tenant Management
+export type SuperAdminTenant = {
+  id: number;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  address: string | null;
+  phone: string | null;
+  timezone: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  subscriptions?: Array<{
+    id: number;
+    plan_id: number;
+    status: string;
+    start_date: string;
+    end_date: string;
+    plan?: {
+      id: number;
+      name: string;
+      price_monthly: string;
+    };
+  }>;
+};
+
+export type SuperAdminTenantResponse = {
+  data: SuperAdminTenant[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+};
+
+export type CreateTenantPayload = {
+  name: string;
+  slug: string;
+  logo_url?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  timezone?: string;
+  is_active?: boolean;
+};
+
+export type UpdateTenantPayload = Partial<CreateTenantPayload>;
+
+export async function fetchSuperAdminTenants(): Promise<SuperAdminTenantResponse> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/tenants`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch tenants: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchSuperAdminTenant(tenantId: number): Promise<SuperAdminTenant> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/tenants/${tenantId}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch tenant: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function createTenant(payload: CreateTenantPayload): Promise<SuperAdminTenant> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/tenants`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to create tenant: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function updateTenant(tenantId: number, payload: UpdateTenantPayload): Promise<SuperAdminTenant> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/tenants/${tenantId}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to update tenant: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteTenant(tenantId: number): Promise<void> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/tenants/${tenantId}`;
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to delete tenant: ${response.statusText}`);
+  }
+}
+
+export async function toggleTenantStatus(tenantId: number): Promise<{ is_active: boolean }> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/tenants/${tenantId}/toggle-status`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to toggle tenant status: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// Plan/Pricing Management
+export type Plan = {
+  id: number;
+  name: string;
+  description: string | null;
+  price_monthly: string;
+  price_yearly: string | null;
+  max_tenants: number | null;
+  max_users: number | null;
+  max_menus: number | null;
+  features_json: string[] | null;
+  discount_percentage: string | null;
+  discount_amount: string | null;
+  discount_start_date: string | null;
+  discount_end_date: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PlanResponse = {
+  data: Plan[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+};
+
+export type CreatePlanPayload = {
+  name: string;
+  description?: string | null;
+  price_monthly: number;
+  price_yearly?: number | null;
+  max_tenants?: number | null;
+  max_users?: number | null;
+  max_menus?: number | null;
+  features_json?: string[];
+  discount_percentage?: number | null;
+  discount_amount?: number | null;
+  discount_start_date?: string | null;
+  discount_end_date?: string | null;
+  is_active?: boolean;
+};
+
+export type UpdatePlanPayload = Partial<CreatePlanPayload>;
+
+export async function fetchPlans(): Promise<PlanResponse> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/plans`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch plans: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchPlan(planId: number): Promise<Plan> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/plans/${planId}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch plan: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function createPlan(payload: CreatePlanPayload): Promise<Plan> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/plans`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to create plan: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function updatePlan(planId: number, payload: UpdatePlanPayload): Promise<Plan> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/plans/${planId}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to update plan: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function deletePlan(planId: number): Promise<void> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/plans/${planId}`;
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to delete plan: ${response.statusText}`);
+  }
+}
+

@@ -5,7 +5,7 @@ import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { tenantContext, tenantTables } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { QrCode, Plus, Edit, Trash2, Copy, Check } from "lucide-react";
+import { QrCode, Plus, Edit, Trash2, Copy, Check, Loader2 } from "lucide-react";
 import { TableFormModal } from "@/components/tenant/table-form-modal";
 import { QrPrintModal } from "@/components/tenant/qr-print-modal";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
@@ -31,6 +31,8 @@ export default function TablesPage() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [isRegenerating, setIsRegenerating] = useState<number | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isConfirmingRegenerate, setIsConfirmingRegenerate] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrData, setQrData] = useState<any>(null);
   const [isLoadingQr, setIsLoadingQr] = useState(false);
@@ -152,11 +154,12 @@ export default function TablesPage() {
       message: "Apakah Anda yakin ingin menghapus meja ini? Tindakan ini tidak dapat dibatalkan.",
       variant: "danger",
       onConfirm: async () => {
-        setConfirmModal({ ...confirmModal, isOpen: false });
+        setIsConfirmingDelete(true);
         setIsDeleting(tableId);
         try {
           await deleteTable(tableId);
           await loadTables();
+          setConfirmModal({ ...confirmModal, isOpen: false });
           setAlertModal({
             isOpen: true,
             title: "Berhasil",
@@ -172,6 +175,7 @@ export default function TablesPage() {
           });
         } finally {
           setIsDeleting(null);
+          setIsConfirmingDelete(false);
         }
       },
     });
@@ -184,11 +188,12 @@ export default function TablesPage() {
       message: "Apakah Anda yakin ingin membuat ulang QR code? QR code lama tidak akan bisa digunakan lagi.",
       variant: "warning",
       onConfirm: async () => {
-        setConfirmModal({ ...confirmModal, isOpen: false });
+        setIsConfirmingRegenerate(true);
         setIsRegenerating(tableId);
         try {
           await regenerateTableQr(tableId);
           await loadTables();
+          setConfirmModal({ ...confirmModal, isOpen: false });
           setAlertModal({
             isOpen: true,
             title: "Berhasil",
@@ -204,6 +209,7 @@ export default function TablesPage() {
           });
         } finally {
           setIsRegenerating(null);
+          setIsConfirmingRegenerate(false);
         }
       },
     });
@@ -331,6 +337,11 @@ export default function TablesPage() {
                       <p className="mt-1 text-xs text-slate-500">
                         Status: {table.is_active ? "Aktif" : "Tidak Aktif"}
                       </p>
+                      {table.description && (
+                        <p className="mt-1 text-sm text-slate-700">
+                          {table.description}
+                        </p>
+                      )}
                     </div>
                     <QrCode className="h-8 w-8 text-slate-400" />
                   </div>
@@ -367,23 +378,29 @@ export default function TablesPage() {
                     <button
                       onClick={() => handlePrintQr(table)}
                       disabled={isLoadingQr}
-                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 flex items-center justify-center gap-1.5"
                     >
-                      {isLoadingQr ? "..." : "Cetak QR"}
+                      {isLoadingQr && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      {isLoadingQr ? "Memuat..." : "Cetak QR"}
                     </button>
                     <button
                       onClick={() => handleRegenerateQr(table.id)}
                       disabled={isRegenerating === table.id}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 flex items-center justify-center gap-1.5"
                     >
-                      {isRegenerating === table.id ? "..." : "Regen QR"}
+                      {isRegenerating === table.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      {isRegenerating === table.id ? "Memproses..." : "Regen QR"}
                     </button>
                     <button
                       onClick={() => handleDelete(table.id)}
                       disabled={isDeleting === table.id}
-                      className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                      className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 flex items-center justify-center"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {isDeleting === table.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -423,11 +440,16 @@ export default function TablesPage() {
 
         <ConfirmModal
           isOpen={confirmModal.isOpen}
-          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+          onClose={() => {
+            if (!isConfirmingDelete && !isConfirmingRegenerate) {
+              setConfirmModal({ ...confirmModal, isOpen: false });
+            }
+          }}
           onConfirm={confirmModal.onConfirm}
           title={confirmModal.title}
           message={confirmModal.message}
           variant={confirmModal.variant}
+          isLoading={isConfirmingDelete || isConfirmingRegenerate}
         />
 
         <AlertModal

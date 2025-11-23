@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\PaymentController as CustomerPaymentController;
 use App\Http\Controllers\Payment\PaymentCallbackController;
 use App\Http\Controllers\Payment\PaymentProofController;
+use App\Http\Controllers\SuperAdmin\PlanController as SuperAdminPlanController;
 use App\Http\Controllers\SuperAdmin\TenantController as SuperAdminTenantController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ImageUploadController;
@@ -124,5 +125,6 @@ Route::prefix('admin')
     ->group(function () {
         Route::apiResource('tenants', SuperAdminTenantController::class);
         Route::post('tenants/{tenant}/toggle-status', [SuperAdminTenantController::class, 'toggleStatus']);
+        Route::apiResource('plans', SuperAdminPlanController::class);
     });
 

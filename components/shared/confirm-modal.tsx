@@ -1,6 +1,6 @@
 "use client";
 
-import { X, AlertTriangle } from "lucide-react";
+import { X, AlertTriangle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ConfirmModalProps = {
@@ -105,8 +105,9 @@ export function ConfirmModal({
             <button
               onClick={handleConfirm}
               disabled={isLoading}
-              className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed ${styles.button}`}
+              className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${styles.button}`}
             >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               {isLoading ? "Memproses..." : confirmLabel}
             </button>
           </div>
