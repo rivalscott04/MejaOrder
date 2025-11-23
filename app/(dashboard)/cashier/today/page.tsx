@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { fetchOrders, getCurrentUser, type Order, type LoginResponse } from "@/lib/api-client";
 import { currencyFormatter, formatTime, cn, formatOrderCode } from "@/lib/utils";
-import { TrendingUp, DollarSign, Package, CheckCircle2, AlertCircle, Calendar, ChevronDown } from "lucide-react";
+import { TrendingUp, DollarSign, Package, CheckCircle2, AlertCircle, Calendar, ChevronDown, ChevronUp, ShoppingBag, CreditCard } from "lucide-react";
 import { StatsGridSkeleton } from "@/components/shared/menu-skeleton";
 import { PaymentMethodBadge } from "@/components/shared/payment-method-badge";
 
@@ -19,6 +19,8 @@ export default function CashierStatisticsPage() {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("today");
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>("all");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>("all");
+  const [showOrderStatusDetails, setShowOrderStatusDetails] = useState(true);
+  const [showPaymentStatusDetails, setShowPaymentStatusDetails] = useState(true);
 
   // Fetch user data
   useEffect(() => {
@@ -186,15 +188,68 @@ export default function CashierStatisticsPage() {
           </div>
         )}
 
-        {/* Status Breakdown */}
-        <div className="mb-4 sm:mb-5 lg:mb-6 grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4 lg:grid-cols-7">
-          <StatusCard label="Diterima" count={stats.accepted} />
-          <StatusCard label="Sedang Disiapkan" count={stats.preparing} />
-          <StatusCard label="Siap" count={stats.ready} />
-          <StatusCard label="Selesai" count={stats.completed} variant="success" />
-          <StatusCard label="Dibatalkan" count={stats.canceled} variant="danger" />
-          <StatusCard label="Lunas" count={stats.paid} variant="success" />
-          <StatusCard label="Belum Lunas" count={stats.unpaid} variant="warning" />
+        {/* Status Breakdown - Grouped by Category */}
+        <div className="mb-4 sm:mb-5 lg:mb-6 space-y-4">
+          {/* Order Status Section */}
+          <div className="rounded-xl lg:rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 lg:p-5 shadow-sm">
+            <button
+              onClick={() => setShowOrderStatusDetails(!showOrderStatusDetails)}
+              className="w-full flex items-center justify-between mb-3 sm:mb-4"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-lg bg-blue-50 p-2">
+                  <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">Status Pesanan</h3>
+                  <p className="text-xs text-slate-500">Ringkasan status pesanan</p>
+                </div>
+              </div>
+              {showOrderStatusDetails ? (
+                <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
+              )}
+            </button>
+            {showOrderStatusDetails && (
+              <div className="grid gap-2.5 sm:gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+                <StatusCard label="Diterima" count={stats.accepted} />
+                <StatusCard label="Sedang Disiapkan" count={stats.preparing} />
+                <StatusCard label="Siap" count={stats.ready} />
+                <StatusCard label="Selesai" count={stats.completed} variant="success" />
+                <StatusCard label="Dibatalkan" count={stats.canceled} variant="danger" />
+              </div>
+            )}
+          </div>
+
+          {/* Payment Status Section */}
+          <div className="rounded-xl lg:rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 lg:p-5 shadow-sm">
+            <button
+              onClick={() => setShowPaymentStatusDetails(!showPaymentStatusDetails)}
+              className="w-full flex items-center justify-between mb-3 sm:mb-4"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-lg bg-emerald-50 p-2">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">Status Pembayaran</h3>
+                  <p className="text-xs text-slate-500">Ringkasan status pembayaran</p>
+                </div>
+              </div>
+              {showPaymentStatusDetails ? (
+                <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
+              )}
+            </button>
+            {showPaymentStatusDetails && (
+              <div className="grid gap-2.5 sm:gap-3 grid-cols-2 lg:grid-cols-2">
+                <StatusCard label="Lunas" count={stats.paid} variant="success" />
+                <StatusCard label="Belum Lunas" count={stats.unpaid} variant="warning" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Filter and Orders List */}
@@ -351,7 +406,7 @@ export default function CashierStatisticsPage() {
                       <th className="pb-3">Meja</th>
                       <th className="pb-3">Kode</th>
                       <th className="pb-3">Status</th>
-                      <th className="pb-3">Bayar</th>
+                      <th className="pb-3">Status Pembayaran</th>
                       <th className="pb-3">Metode</th>
                       <th className="pb-3 text-right">Total</th>
                     </tr>

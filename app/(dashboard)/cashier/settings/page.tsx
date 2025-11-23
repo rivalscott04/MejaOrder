@@ -130,14 +130,6 @@ export default function CashierSettingsPage() {
                     <p className="text-sm font-semibold text-slate-900">{userData?.user.email || "-"}</p>
                   </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-500">Role</label>
-                  <div className="mt-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-sm font-semibold text-slate-900 capitalize">
-                      {userData?.user.role?.replace("_", " ") || "-"}
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
 

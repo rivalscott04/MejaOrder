@@ -735,7 +735,7 @@ export default function CashierDashboard() {
                       <th className="pb-3">Nama</th>
                       <th className="pb-3">Kode</th>
                       <th className="pb-3">Total</th>
-                      <th className="pb-3">Bayar</th>
+                      <th className="pb-3">Metode Pembayaran</th>
                       <th className="pb-3">Status</th>
                       <th className="pb-3">Aksi</th>
                     </tr>
@@ -767,7 +767,7 @@ export default function CashierDashboard() {
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">
-                            <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
                               <select
                                 value={order.order_status}
                                 onChange={(e) => {
@@ -784,7 +784,7 @@ export default function CashierDashboard() {
                                 }}
                                 disabled={isUpdating && updatingOrderId === order.id}
                                 className={cn(
-                                  "appearance-none rounded-full border-2 px-3 py-1.5 text-[10px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[140px] cursor-pointer",
+                                  "appearance-none rounded-full border-2 px-2.5 py-1 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer w-auto pr-7",
                                   order.order_status === "pending" && "border-slate-300 bg-slate-100 text-slate-700",
                                   order.order_status === "accepted" && "border-amber-300 bg-amber-100 text-amber-700",
                                   order.order_status === "preparing" && "border-amber-300 bg-amber-100 text-amber-700",
@@ -801,7 +801,7 @@ export default function CashierDashboard() {
                                 <option value="completed">Selesai</option>
                                 <option value="canceled">Dibatalkan</option>
                               </select>
-                              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-500" />
                             </div>
                             {(order.order_status === "ready" || order.order_status === "completed") &&
                               !order.invoice_printed_at &&

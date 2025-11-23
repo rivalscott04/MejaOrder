@@ -107,6 +107,7 @@ Route::prefix('cashier')
     ])
     ->group(function () {
         Route::get('orders', [CashierOrderController::class, 'index']);
+        Route::get('orders/completed', [CashierOrderController::class, 'completed']);
         Route::get('orders/{order}', [CashierOrderController::class, 'show']);
         Route::patch('orders/{order}/status', [CashierOrderController::class, 'updateStatus']);
         Route::patch('orders/{order}/payment-status', [CashierOrderController::class, 'updatePaymentStatus']);

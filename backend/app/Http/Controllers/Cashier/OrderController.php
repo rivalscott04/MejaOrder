@@ -24,6 +24,7 @@ class OrderController extends Controller
 
         $query = Order::query()
             ->where('tenant_id', $tenant->id)
+            ->where('order_status', '!=', 'completed') // Exclude completed orders from queue
             ->with(['table:id,table_number,description', 'items:id,order_id,menu_id,menu_name_snapshot,qty,subtotal'])
             ->when(request('order_status'), fn ($query, $status) => $query->where('order_status', $status))
             ->when(request('payment_status'), fn ($query, $status) => $query->where('payment_status', $status))
@@ -139,6 +140,60 @@ class OrderController extends Controller
         return response()->json([
             'invoice_printed_at' => $order->invoice_printed_at,
         ]);
+    }
+
+    /**
+     * Get completed orders for reports and summaries.
+     * This endpoint is specifically for viewing completed orders that are excluded from the order queue.
+     */
+    public function completed(): JsonResponse
+    {
+        $tenant = tenant();
+
+        $query = Order::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('order_status', 'completed')
+            ->with(['table:id,table_number,description', 'items:id,order_id,menu_id,menu_name_snapshot,qty,subtotal'])
+            ->when(request('payment_status'), fn ($query, $status) => $query->where('payment_status', $status))
+            ->when(request('date'), fn ($query, $date) => $query->whereDate('created_at', $date))
+            ->when(request('date_from'), fn ($query, $date) => $query->whereDate('created_at', '>=', $date))
+            ->when(request('date_to'), fn ($query, $date) => $query->whereDate('created_at', '<=', $date))
+            ->latest();
+
+        // If all=true, return all results without pagination (useful for statistics)
+        if (request('all') === 'true') {
+            $orders = $query->get();
+            $total = $orders->count();
+            
+            // Transform orders to include table.number instead of table.table_number
+            $orders->transform(function ($order) {
+                if ($order->table) {
+                    $order->table->number = $order->table->table_number;
+                }
+                return $order;
+            });
+
+            // Return in pagination-like format for consistency
+            return response()->json([
+                'data' => $orders,
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $total,
+                'total' => $total,
+            ]);
+        }
+
+        $orders = $query->paginate(20);
+
+        // Transform orders to include table.number instead of table.table_number
+        $orders->getCollection()->transform(function ($order) {
+            if ($order->table) {
+                $order->table->number = $order->table->table_number;
+            }
+            return $order;
+        });
+
+        return response()->json($orders);
     }
 
     protected function authorizeOrder(Order $order): void

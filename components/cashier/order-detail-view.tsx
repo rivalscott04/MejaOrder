@@ -375,15 +375,28 @@ function PaymentStatusBadge({ status }: { status: string }) {
     waiting_verification: "bg-amber-100 text-amber-700",
     paid: "bg-emerald-100 text-emerald-700",
     failed: "bg-rose-100 text-rose-700",
+    refunded: "bg-slate-100 text-slate-700",
   };
+  
+  const getStatusLabel = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      unpaid: "Belum dibayar",
+      waiting_verification: "Menunggu verifikasi",
+      paid: "Lunas",
+      failed: "Pembayaran gagal",
+      refunded: "Dikembalikan",
+    };
+    return statusMap[status] || status;
+  };
+  
   return (
     <span
       className={cn(
-        "mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize",
+        "mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold",
         variants[status] ?? "bg-slate-100 text-slate-700"
       )}
     >
-      {status.replace("_", " ")}
+      {getStatusLabel(status)}
     </span>
   );
 }

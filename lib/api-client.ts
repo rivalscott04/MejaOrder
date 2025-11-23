@@ -239,6 +239,45 @@ export async function fetchOrders(params?: {
   return response.json();
 }
 
+/**
+ * Fetch completed orders for reports and summaries.
+ * This endpoint returns only orders with status "completed" that are excluded from the order queue.
+ */
+export async function fetchCompletedOrders(params?: {
+  payment_status?: string;
+  date?: string;
+  date_from?: string;
+  date_to?: string;
+  all?: boolean;
+}): Promise<OrdersResponse> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const queryParams = new URLSearchParams();
+  if (params?.payment_status) queryParams.append("payment_status", params.payment_status);
+  if (params?.date) queryParams.append("date", params.date);
+  if (params?.date_from) queryParams.append("date_from", params.date_from);
+  if (params?.date_to) queryParams.append("date_to", params.date_to);
+  if (params?.all) queryParams.append("all", "true");
+
+  const url = `${base}/api/cashier/orders/completed${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    credentials: "include", // Include cookies for auth
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch completed orders: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export async function fetchOrderDetail(orderId: number): Promise<Order> {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {
