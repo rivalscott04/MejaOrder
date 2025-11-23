@@ -448,7 +448,7 @@ export function CustomerExperience({
   }, [proofPreview]);
 
   return (
-    <section className="relative space-y-6">
+    <section className={cn("relative space-y-6", cart.length > 0 && "pb-28")}>
       <header className="rounded-3xl bg-white p-5 shadow-card">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-sm text-slate-600">

@@ -16,7 +16,7 @@ class OptionGroupController extends Controller
     public function index(): JsonResponse
     {
         $groups = OptionGroup::query()
-            ->with('optionItems')
+            ->with('items')
             ->where('tenant_id', tenant()->id)
             ->orderBy('sort_order')
             ->get();
@@ -54,7 +54,7 @@ class OptionGroupController extends Controller
     {
         $this->authorizeGroup($optionGroup);
 
-        $item = $optionGroup->optionItems()->create($request->validated());
+        $item = $optionGroup->items()->create($request->validated());
 
         return response()->json($item, 201);
     }
