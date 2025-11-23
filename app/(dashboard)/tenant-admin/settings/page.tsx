@@ -579,8 +579,10 @@ export default function SettingsPage() {
                           setSettings({
                             ...settings,
                             maintenance_mode: {
-                              ...settings.maintenance_mode,
+                              is_enabled: settings.maintenance_mode?.is_enabled ?? false,
                               message: e.target.value,
+                              image_url: settings.maintenance_mode?.image_url ?? null,
+                              estimated_completion_at: settings.maintenance_mode?.estimated_completion_at ?? null,
                             },
                           });
                         }
@@ -604,7 +606,9 @@ export default function SettingsPage() {
                           setSettings({
                             ...settings,
                             maintenance_mode: {
-                              ...settings.maintenance_mode,
+                              is_enabled: settings.maintenance_mode?.is_enabled ?? false,
+                              message: settings.maintenance_mode?.message ?? null,
+                              image_url: settings.maintenance_mode?.image_url ?? null,
                               estimated_completion_at: e.target.value ? new Date(e.target.value).toISOString() : null,
                             },
                           });
