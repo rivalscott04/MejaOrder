@@ -33,6 +33,7 @@ import { PaymentMethodBadge } from "@/components/shared/payment-method-badge";
 import { Monitor, LayoutGrid, Maximize2, Eye } from "lucide-react";
 import { AlertModal } from "@/components/shared/alert-modal";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { Toast } from "@/components/shared/toast";
 import { InvoicePrinter } from "@/components/tenant/invoice-printer";
 import { WifiInputModal } from "@/components/tenant/wifi-input-modal";
 
@@ -60,6 +61,15 @@ export default function CashierDashboard() {
     title: "",
     message: "",
     variant: "info",
+  });
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    message: string;
+    variant: "success" | "error" | "info";
+  }>({
+    isOpen: false,
+    message: "",
+    variant: "success",
   });
   const [showInvoice, setShowInvoice] = useState(false);
   const [showWifiModal, setShowWifiModal] = useState(false);
@@ -409,16 +419,11 @@ export default function CashierDashboard() {
       // Show success feedback after a short delay to show loading state
       setTimeout(() => {
         setUpdatingOrderId(null);
-        setAlertModal({
+        setToast({
           isOpen: true,
-          title: "Berhasil",
           message: "Status pesanan berhasil diupdate",
           variant: "success",
         });
-        // Auto close after 2 seconds
-        setTimeout(() => {
-          setAlertModal((prev) => ({ ...prev, isOpen: false }));
-        }, 2000);
       }, 300);
     } catch (error) {
       console.error("Failed to update order status:", error);
@@ -452,16 +457,11 @@ export default function CashierDashboard() {
       // Show success feedback after a short delay to show loading state
       setTimeout(() => {
         setUpdatingOrderId(null);
-        setAlertModal({
+        setToast({
           isOpen: true,
-          title: "Berhasil",
           message: "Status pembayaran berhasil diupdate",
           variant: "success",
         });
-        // Auto close after 2 seconds
-        setTimeout(() => {
-          setAlertModal((prev) => ({ ...prev, isOpen: false }));
-        }, 2000);
       }, 300);
     } catch (error) {
       console.error("Failed to update payment status:", error);
@@ -784,7 +784,7 @@ export default function CashierDashboard() {
                                 }}
                                 disabled={isUpdating && updatingOrderId === order.id}
                                 className={cn(
-                                  "appearance-none rounded-full border-2 px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[140px] cursor-pointer",
+                                  "appearance-none rounded-full border-2 px-3 py-1.5 text-[10px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[140px] cursor-pointer",
                                   order.order_status === "pending" && "border-slate-300 bg-slate-100 text-slate-700",
                                   order.order_status === "accepted" && "border-amber-300 bg-amber-100 text-amber-700",
                                   order.order_status === "preparing" && "border-amber-300 bg-amber-100 text-amber-700",
@@ -975,14 +975,25 @@ export default function CashierDashboard() {
         />
       </div>
 
-      {/* Alert Modal */}
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
-        title={alertModal.title}
-        message={alertModal.message}
-        variant={alertModal.variant}
+      {/* Toast Notification */}
+      <Toast
+        isOpen={toast.isOpen}
+        onClose={() => setToast((prev) => ({ ...prev, isOpen: false }))}
+        message={toast.message}
+        variant={toast.variant}
+        duration={3000}
       />
+
+      {/* Alert Modal - Only for errors */}
+      {alertModal.variant !== "success" && (
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
+          title={alertModal.title}
+          message={alertModal.message}
+          variant={alertModal.variant}
+        />
+      )}
 
       {/* Confirm Modal */}
       <ConfirmModal

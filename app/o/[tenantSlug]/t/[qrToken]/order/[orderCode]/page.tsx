@@ -27,6 +27,17 @@ const statusKeyToIndex = statusSteps.reduce<Record<string, number>>((acc, step, 
   return acc;
 }, {});
 
+const getPaymentStatusLabel = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    unpaid: "Belum dibayar",
+    waiting_verification: "Menunggu verifikasi",
+    paid: "Lunas",
+    failed: "Pembayaran gagal",
+    refunded: "Dikembalikan",
+  };
+  return statusMap[status] || status;
+};
+
 type OrderSummary = {
   order_code: string;
   payment_method: string;
@@ -222,7 +233,7 @@ export default function OrderTrackingPage() {
         </div>
 
         {/* Order Code Card - Prominent Display */}
-        <div className="rounded-3xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-card mb-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-card mb-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
@@ -237,7 +248,7 @@ export default function OrderTrackingPage() {
             </div>
             <button
               onClick={handleCopyOrderCode}
-              className="ml-4 flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 hover:border-emerald-400 active:scale-95"
+              className="ml-4 flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:border-slate-400 active:scale-95"
             >
               {copied ? (
                 <>
@@ -269,7 +280,7 @@ export default function OrderTrackingPage() {
           <div className="mb-4 space-y-2 text-xs text-slate-600 sm:grid sm:grid-cols-2 sm:gap-2 md:flex md:items-center md:justify-between md:space-y-0">
             <p className="font-semibold text-slate-900">Kode: {formatOrderCode(order.order_code)}</p>
             <p>
-              Pembayaran: <span className="font-semibold text-slate-900 capitalize">{order.payment_status.replace("_", " ")}</span>
+              Status Pembayaran: <span className="font-semibold text-slate-900">{getPaymentStatusLabel(order.payment_status)}</span>
             </p>
             <p className="sm:col-span-2 md:col-span-1">
               Total: <span className="font-semibold text-slate-900">{currencyFormatter.format(order.total_amount)}</span>

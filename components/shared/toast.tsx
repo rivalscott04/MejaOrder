@@ -59,7 +59,7 @@ export function Toast({
   const IconComponent = styles.icon;
 
   return (
-    <div className="fixed top-4 right-4 z-50" style={{ animation: 'slideIn 0.3s ease-out' }}>
+    <div className="fixed top-4 right-4 z-50 animate-[slideIn_0.3s_ease-out]">
       <div
         className={cn(
           "flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg",
