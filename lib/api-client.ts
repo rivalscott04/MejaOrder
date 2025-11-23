@@ -1156,17 +1156,50 @@ export async function fetchOptionGroups(): Promise<OptionGroup[]> {
   const base = backendUrl.replace(/\/$/, "");
   const url = `${base}/api/tenant/option-groups`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: getAuthHeaders(),
-    credentials: "include",
-  });
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: getAuthHeaders(),
+      credentials: "include",
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch option groups: ${response.statusText}`);
+    if (!response.ok) {
+      // Handle 401 specifically - this is authentication error, not CORS
+      if (response.status === 401) {
+        throw new Error("401 Unauthorized: Silakan login ulang untuk melanjutkan.");
+      }
+      // Handle 403
+      if (response.status === 403) {
+        throw new Error("403 Forbidden: Anda tidak memiliki izin untuk mengakses data ini.");
+      }
+      // Try to get error message from response
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || `Failed to fetch option groups: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    // If it's already an Error with status code, re-throw it
+    if (error instanceof Error && (error.message.includes('401') || error.message.includes('403'))) {
+      throw error;
+    }
+    // For network/fetch errors (TypeError), let formatUserFriendlyError handle it
+    // These might appear as CORS in console but are usually network/auth issues
+    if (error instanceof TypeError) {
+      // Check if it's actually a network error or CORS
+      const errorMsg = error.message.toLowerCase();
+      if (errorMsg.includes('failed to fetch') || errorMsg.includes('networkerror')) {
+        throw new Error("Network Error: Gagal terhubung ke server. Periksa koneksi internet Anda.");
+      }
+      // If it's a CORS-like error but CORS is configured, it's likely auth issue
+      throw new Error("Connection Error: Gagal terhubung ke server. Pastikan Anda sudah login.");
+    }
+    // Re-throw other errors
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to fetch option groups");
   }
-
-  return response.json();
 }
 
 export type CreateOptionGroupPayload = {

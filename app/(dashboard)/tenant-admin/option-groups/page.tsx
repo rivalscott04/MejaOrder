@@ -215,7 +215,21 @@ export default function OptionGroupsPage() {
 
           {error && (
             <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-4">
-              <p className="text-sm text-amber-800">{error}</p>
+              <p className="text-sm text-amber-800 mb-3">{error}</p>
+              <button
+                onClick={loadOptionGroups}
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 rounded-lg bg-amber-100 hover:bg-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-800 transition disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Memuat...
+                  </>
+                ) : (
+                  "Coba Lagi"
+                )}
+              </button>
             </div>
           )}
 

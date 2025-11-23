@@ -24,7 +24,12 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            $user = Auth::user()->load('tenant');
+            $user = Auth::user();
+            
+            // Only load tenant if user has tenant_id
+            if ($user->tenant_id) {
+                $user->load('tenant');
+            }
 
             // Check if user is active
             if (!$user->is_active) {
@@ -37,7 +42,7 @@ class AuthController extends Controller
             // Update last login
             $user->update(['last_login_at' => now()]);
 
-            return response()->json([
+            $response = [
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -45,12 +50,18 @@ class AuthController extends Controller
                     'role' => $user->role,
                     'tenant_id' => $user->tenant_id,
                 ],
-                'tenant' => [
+            ];
+
+            // Only include tenant if user has one
+            if ($user->tenant) {
+                $response['tenant'] = [
                     'id' => $user->tenant->id,
                     'name' => $user->tenant->name,
                     'slug' => $user->tenant->slug,
-                ],
-            ]);
+                ];
+            }
+
+            return response()->json($response);
         }
 
         // Log detailed error for monitoring, but return generic message
@@ -123,9 +134,12 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user->load('tenant');
+        // Only load tenant if user has tenant_id
+        if ($user->tenant_id) {
+            $user->load('tenant');
+        }
 
-        return response()->json([
+        $response = [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -133,12 +147,18 @@ class AuthController extends Controller
                 'role' => $user->role,
                 'tenant_id' => $user->tenant_id,
             ],
-            'tenant' => [
+        ];
+
+        // Only include tenant if user has one
+        if ($user->tenant) {
+            $response['tenant'] = [
                 'id' => $user->tenant->id,
                 'name' => $user->tenant->name,
                 'slug' => $user->tenant->slug,
-            ],
-        ]);
+            ];
+        }
+
+        return response()->json($response);
     }
 
     public function logout(): JsonResponse

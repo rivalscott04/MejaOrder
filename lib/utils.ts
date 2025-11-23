@@ -117,21 +117,35 @@ export function formatOrderCode(orderCode: string, maxLength: number = 10): stri
  * @returns String dengan pesan error yang user-friendly
  */
 export function formatUserFriendlyError(error: unknown, defaultMessage: string = "Terjadi kesalahan. Silakan coba lagi."): string {
-  if (error instanceof TypeError && error.message.includes('fetch')) {
-    return "Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.";
-  }
-  
   if (error instanceof Error) {
     const errorMessage = error.message.toLowerCase();
     
-    // CORS errors
-    if (errorMessage.includes('cors') || errorMessage.includes('blocked') || errorMessage.includes('access-control')) {
-      return "Terjadi masalah koneksi dengan server. Silakan refresh halaman atau hubungi administrator jika masalah berlanjut.";
+    // Check for specific error messages first (these are already user-friendly)
+    if (error.message.includes('Silakan login ulang') || error.message.includes('tidak memiliki izin')) {
+      return error.message;
     }
     
-    // Network errors
-    if (errorMessage.includes('network') || errorMessage.includes('failed to fetch') || errorMessage.includes('err_failed')) {
+    // 401/403 errors - prioritize these before CORS checks
+    if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+      return "Sesi Anda telah berakhir. Silakan login ulang untuk melanjutkan.";
+    }
+    
+    if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+      return "Anda tidak memiliki izin untuk mengakses data ini.";
+    }
+    
+    // Network errors (check before CORS to avoid false positives)
+    if (errorMessage.includes('network error') || errorMessage.includes('gagal terhubung')) {
+      return error.message; // Already user-friendly
+    }
+    
+    if (errorMessage.includes('failed to fetch') || errorMessage.includes('err_failed')) {
       return "Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.";
+    }
+    
+    // CORS errors - only if explicitly mentioned (not from 401 responses)
+    if (errorMessage.includes('cors') && !errorMessage.includes('401') && !errorMessage.includes('403')) {
+      return "Terjadi masalah koneksi dengan server. Silakan refresh halaman atau hubungi administrator jika masalah berlanjut.";
     }
     
     // Timeout errors
@@ -149,16 +163,15 @@ export function formatUserFriendlyError(error: unknown, defaultMessage: string =
       return "Terjadi kesalahan di server. Silakan coba lagi nanti atau hubungi administrator.";
     }
     
-    // 401/403 errors
-    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || 
-        errorMessage.includes('403') || errorMessage.includes('forbidden')) {
-      return "Anda tidak memiliki izin untuk melakukan aksi ini.";
-    }
-    
     // Return the error message if it's already user-friendly (in Indonesian)
-    if (error.message && !error.message.includes('http') && !error.message.includes('api')) {
+    if (error.message && !error.message.includes('http') && !error.message.includes('api') && !error.message.includes('fetch')) {
       return error.message;
     }
+  }
+  
+  // Handle TypeError (network/fetch errors)
+  if (error instanceof TypeError) {
+    return "Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.";
   }
   
   return defaultMessage;
