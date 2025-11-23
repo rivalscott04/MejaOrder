@@ -9,7 +9,7 @@ import { AlertModal } from "@/components/shared/alert-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterFormData } from "@/lib/validations";
-import { register } from "@/lib/api-client";
+import { register as registerUser } from "@/lib/api-client";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const response = await register({
+      const response = await registerUser({
         tenant_name: data.tenantName,
         tenant_slug: data.tenantSlug,
         admin_name: data.adminName,

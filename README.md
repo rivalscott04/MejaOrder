@@ -23,7 +23,10 @@ Buat file `.env.local` di root direktori dengan isi berikut:
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 NODE_ENV=development
+PORT=3000
 ```
+
+**Catatan:** Variable `PORT` opsional, default adalah 3000. Jika ingin menggunakan port lain, tambahkan `PORT=<port_number>`.
 
 ### 3. Pastikan Backend Berjalan
 
@@ -35,7 +38,7 @@ Pastikan backend Laravel sudah berjalan di `http://localhost:8000`. Jika backend
 npm run dev
 ```
 
-Aplikasi akan berjalan di http://localhost:3000
+Aplikasi akan berjalan di http://localhost:3000 (atau port yang di-set di `PORT` environment variable)
 
 ## Setup Production
 
@@ -46,10 +49,12 @@ Buat file `.env.production` atau set environment variables di platform deploymen
 ```env
 NEXT_PUBLIC_BACKEND_URL=https://api.yourdomain.com
 NODE_ENV=production
+PORT=3000
 ```
 
 **Penting:**
 - Variable `NEXT_PUBLIC_BACKEND_URL` wajib diisi dengan URL backend production
+- Variable `PORT` opsional, default adalah 3000. Set sesuai kebutuhan di production
 - Gunakan HTTPS untuk production
 - Pastikan backend sudah dikonfigurasi CORS untuk menerima request dari domain frontend
 
@@ -61,16 +66,53 @@ npm run build:prod
 
 ### 3. Deploy
 
-**Vercel:**
-- Set environment variables di Vercel Dashboard (Settings > Environment Variables)
-- Deploy menggunakan Vercel CLI atau connect repository ke Vercel
+**Platform Managed (Vercel/Netlify):**
+- Tidak perlu start manual, platform akan handle secara otomatis
+- Set environment variables di dashboard platform
+- Deploy menggunakan CLI atau connect repository
 
-**Server Manual:**
+**Server Sendiri (VPS/Dedicated Server):**
+- **Perlu di-start** dengan `npm run start` setelah build
+- Set environment variables di file `.env.production` atau export manual
+- Disarankan menggunakan process manager seperti PM2 untuk keep alive
+
+**Cara Deploy di Server Sendiri:**
+
+1. Build aplikasi:
 ```bash
+npm run build:prod
+```
+
+2. Start aplikasi:
+```bash
+# Menggunakan file .env.production
+npm run start
+
+# Atau set environment variables manual
 export NEXT_PUBLIC_BACKEND_URL=https://api.yourdomain.com
 export NODE_ENV=production
+export PORT=3000
 npm run start
 ```
+
+3. Menggunakan PM2 (recommended untuk production):
+```bash
+# Install PM2
+npm install -g pm2
+
+# Start dengan PM2
+pm2 start npm --name "mejaorder-frontend" -- start
+
+# Atau dengan environment variables
+pm2 start npm --name "mejaorder-frontend" -- start --env production
+
+# PM2 akan otomatis membaca .env.production jika menggunakan --env production
+```
+
+**Catatan:**
+- Next.js perlu di-start di server sendiri karena aplikasi ini menggunakan Server-Side Rendering (SSR)
+- Untuk platform seperti Vercel, tidak perlu start karena mereka handle sebagai serverless functions
+- Pastikan Node.js terinstall di server dan versi sesuai dengan requirement
 
 ## Scripts
 
@@ -99,3 +141,21 @@ Jika environment variables tidak terbaca:
 2. Restart development server setelah mengubah `.env.local`
 3. Untuk production, pastikan environment variables di-set di platform deployment
 4. Variable harus diawali dengan `NEXT_PUBLIC_` untuk bisa diakses di browser
+
+### Mengubah Port Aplikasi
+
+Untuk mengubah port aplikasi, set environment variable `PORT`:
+
+**Development:**
+Tambahkan di `.env.local`:
+```env
+PORT=3001
+```
+
+**Production:**
+Tambahkan di `.env.production` atau set di platform deployment:
+```env
+PORT=3001
+```
+
+Next.js akan otomatis membaca `PORT` dari environment variable. Jika tidak di-set, default port adalah 3000.
