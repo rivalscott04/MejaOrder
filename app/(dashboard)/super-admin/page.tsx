@@ -524,8 +524,9 @@ export default function SuperAdminDashboard() {
 
       {toast && (
         <Toast
+          isOpen={!!toast}
           message={toast.message}
-          type={toast.type}
+          variant={toast.type}
           onClose={() => setToast(null)}
         />
       )}
