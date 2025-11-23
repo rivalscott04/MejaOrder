@@ -158,6 +158,21 @@ export default function SubscriptionPage() {
     return subscriptionInfo?.plan === plan.name;
   };
 
+  // Helper function to safely get features as array
+  const getFeaturesArray = (features: string[] | null | undefined): string[] => {
+    if (!features) return [];
+    if (Array.isArray(features)) return features;
+    if (typeof features === 'string') {
+      try {
+        const parsed = JSON.parse(features);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   return (
     <DashboardLayout role="tenant-admin" userEmail={displayEmail} userName={displayName}>
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
@@ -279,21 +294,25 @@ export default function SubscriptionPage() {
                       )}
                     </div>
 
-                    {plan.features_json && plan.features_json.length > 0 && (
-                      <ul className="mb-4 space-y-2">
-                        {plan.features_json.slice(0, 4).map((feature, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                        {plan.features_json.length > 4 && (
-                          <li className="text-xs text-slate-500 pl-6">
-                            +{plan.features_json.length - 4} fitur lainnya
-                          </li>
-                        )}
-                      </ul>
-                    )}
+                    {(() => {
+                      const features = getFeaturesArray(plan.features_json);
+                      
+                      return features.length > 0 ? (
+                        <ul className="mb-4 space-y-2">
+                          {features.slice(0, 4).map((feature: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                          {features.length > 4 && (
+                            <li className="text-xs text-slate-500 pl-6">
+                              +{features.length - 4} fitur lainnya
+                            </li>
+                          )}
+                        </ul>
+                      ) : null;
+                    })()}
 
                     {plan.max_users && (
                       <p className="text-xs text-slate-500 mb-4">
