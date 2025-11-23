@@ -114,7 +114,10 @@ export default function SuperAdminSettingsPage() {
         {/* Header */}
         <div className="mb-6 lg:mb-8">
           <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Pengaturan Platform</h1>
-          <p className="mt-2 text-sm text-slate-600">Kelola pengaturan maintenance mode untuk platform</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Kelola maintenance mode untuk seluruh platform. Maintenance mode ini akan mempengaruhi semua tenant dan customer di platform. 
+            Untuk maintenance mode per tenant, gunakan menu Settings di halaman tenant admin.
+          </p>
         </div>
 
         {isLoading ? (

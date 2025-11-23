@@ -74,7 +74,14 @@ export default function SubscriptionsPage() {
         <div className="mb-6 lg:mb-8">
           <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Kelola Subscriptions</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Monitor dan kelola semua subscription dari tenants
+            <strong>Subscriptions = Subscription Aktif dari Tenant</strong> - Ini adalah daftar tenant yang sudah membeli dan menggunakan plan. 
+            Di sini Anda melihat tenant mana yang sudah subscribe ke plan tertentu, kapan mulai, kapan berakhir, dan statusnya (active, expired, trial). 
+            Contoh: Tenant "Demo Cafe" sudah subscribe ke plan "Growth Cafe" sejak 1 Januari 2024 dan akan berakhir 31 Desember 2024 dengan status "active".
+          </p>
+          <p className="mt-2 text-sm text-slate-500">
+            💡 <strong>Perbedaan dengan Plans:</strong> Plans adalah paket yang tersedia (seperti produk di katalog), 
+            sedangkan Subscriptions adalah tenant yang sudah membeli dan menggunakan plan tersebut (seperti transaksi pembelian). 
+            Untuk membuat atau mengedit paket, gunakan menu <strong>Plans</strong>.
           </p>
         </div>
 

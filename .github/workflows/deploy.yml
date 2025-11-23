@@ -24,9 +24,15 @@ jobs:
           script: |
             set -e  # Exit on error
             
-            # Navigate to project directory
+            # Setup logging
             PROJECT_PATH="${{ secrets.PROJECT_PATH || '/var/www/MejaOrder' }}"
-            echo "Checking project path: $PROJECT_PATH"
+            LOG_FILE="$PROJECT_PATH/deploy.log"
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            
+            echo "=========================================="
+            echo "Deployment started at: $TIMESTAMP"
+            echo "=========================================="
+            echo "[$TIMESTAMP] Checking project path: $PROJECT_PATH" | tee -a "$LOG_FILE"
             
             # Check if directory exists
             if [ ! -d "$PROJECT_PATH" ]; then
@@ -37,45 +43,63 @@ jobs:
               exit 1
             fi
             
-            echo "Directory exists, navigating..."
+            echo "[$TIMESTAMP] Directory exists, navigating..." | tee -a "$LOG_FILE"
             cd "$PROJECT_PATH"
-            echo "Current directory: $(pwd)"
+            echo "[$TIMESTAMP] Current directory: $(pwd)" | tee -a "$LOG_FILE"
             
             # Pull latest code
-            echo "Pulling latest code from master..."
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Pulling latest code from master..." | tee -a "$LOG_FILE"
             git pull origin master || {
-              echo "Git pull failed!"
-              echo "Current git status:"
+              TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+              echo "[$TIMESTAMP] Git pull failed!" | tee -a "$LOG_FILE"
+              echo "[$TIMESTAMP] Current git status:" | tee -a "$LOG_FILE"
               git status || true
               exit 1
             }
-            echo "Code pulled successfully"
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Code pulled successfully" | tee -a "$LOG_FILE"
             
             # 1. Build frontend
-            echo "Lagi build frontend nih..."
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Lagi build frontend nih..." | tee -a "$LOG_FILE"
             npm run build:prod || exit 1
-            echo "Frontend build selesai!"
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Frontend build selesai!" | tee -a "$LOG_FILE"
             
             # 2. Restart service
-            echo "Restart service order..."
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Restart service order..." | tee -a "$LOG_FILE"
             sudo systemctl restart order.service || exit 1
-            echo "Service udah di-restart"
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Service udah di-restart" | tee -a "$LOG_FILE"
             
             # 3. Navigate to backend folder
-            echo "Masuk ke folder backend..."
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Masuk ke folder backend..." | tee -a "$LOG_FILE"
             cd backend || exit 1
             
             # 4. Run migrations
-            echo "Jalanin migrations..."
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Jalanin migrations..." | tee -a "$LOG_FILE"
             php artisan migrate --force || exit 1
-            echo "Migrations selesai"
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Migrations selesai" | tee -a "$LOG_FILE"
             
             # 5. Clear config and cache
-            echo "Bersihin config sama cache..."
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Bersihin config sama cache..." | tee -a "$LOG_FILE"
             php artisan config:clear || exit 1
             php artisan cache:clear || exit 1
-            echo "Config dan cache udah dibersihin"
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Config dan cache udah dibersihin" | tee -a "$LOG_FILE"
             
-            echo ""
-            echo "SELESAI! Backend Frontend udah siap semua boskuu!"
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] SELESAI! Backend Frontend udah siap semua boskuu!" | tee -a "$LOG_FILE"
+            echo "==========================================" | tee -a "$LOG_FILE"
+            echo "Deployment completed at: $TIMESTAMP" | tee -a "$LOG_FILE"
+            echo "==========================================" | tee -a "$LOG_FILE"
+            echo "" | tee -a "$LOG_FILE"
+            echo "Log tersimpan di: $LOG_FILE"
 

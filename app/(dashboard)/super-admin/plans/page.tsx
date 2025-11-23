@@ -135,7 +135,13 @@ export default function PlansPage() {
         <div className="mb-6 lg:mb-8">
           <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Kelola Subscription Plans</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Kelola semua subscription plan yang tersedia untuk tenants
+            <strong>Plans = Template/Paket yang Tersedia</strong> - Ini seperti menu di restoran. Anda membuat paket-paket subscription seperti "Basic Plan", "Growth Cafe" 
+            dengan harga, fitur, dan durasi tertentu. Plans ini adalah template yang bisa dipilih oleh tenant, tapi belum aktif sampai tenant benar-benar subscribe. 
+            Contoh: Anda membuat plan "Growth Cafe" dengan harga Rp 500.000/bulan, tapi plan ini belum digunakan sampai ada tenant yang subscribe.
+          </p>
+          <p className="mt-2 text-sm text-slate-500">
+            💡 <strong>Perbedaan dengan Subscriptions:</strong> Plans adalah paket yang tersedia (seperti produk di katalog), 
+            sedangkan Subscriptions adalah tenant yang sudah membeli dan menggunakan plan tersebut (seperti transaksi pembelian).
           </p>
         </div>
 

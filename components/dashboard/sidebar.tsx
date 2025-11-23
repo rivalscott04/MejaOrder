@@ -136,8 +136,9 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
     "super-admin": [
       { id: "overview", label: "Overview", icon: <LayoutDashboard className="h-5 w-5" />, href: "/super-admin" },
       { id: "tenants", label: "Tenants", icon: <Building2 className="h-5 w-5" />, href: "/super-admin/tenants" },
+      { id: "users", label: "Tenant Users", icon: <Users className="h-5 w-5" />, href: "/super-admin/users" },
       { id: "plans", label: "Plans", icon: <Package className="h-5 w-5" />, href: "/super-admin/plans" },
-      { id: "subscriptions", label: "Subscriptions", icon: <Users className="h-5 w-5" />, href: "/super-admin/subscriptions" },
+      { id: "subscriptions", label: "Subscriptions", icon: <Package className="h-5 w-5" />, href: "/super-admin/subscriptions" },
       { id: "reports", label: "Reports", icon: <BarChart3 className="h-5 w-5" />, href: "/super-admin/reports" },
       { id: "settings", label: "Settings", icon: <Settings className="h-5 w-5" />, href: "/super-admin/settings" },
     ],

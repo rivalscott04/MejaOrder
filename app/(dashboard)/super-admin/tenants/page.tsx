@@ -17,7 +17,7 @@ import {
   type UpdateTenantPayload,
 } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import { Building2, Search, Plus, Edit, Trash2, ShieldCheck, Loader2 } from "lucide-react";
+import { Building2, Search, Plus, Edit, Trash2, ShieldCheck, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { StatsGridSkeleton, TableSkeleton } from "@/components/shared/menu-skeleton";
 
 export default function TenantsPage() {
@@ -199,10 +199,10 @@ export default function TenantsPage() {
                     key={status}
                     onClick={() => setStatusFilter(status)}
                     className={cn(
-                      "rounded-xl px-4 py-2 text-sm font-semibold capitalize transition",
+                      "rounded-xl px-4 py-2 text-sm font-semibold capitalize transition-all duration-200 cursor-pointer",
                       statusFilter === status
-                        ? "bg-emerald-500 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30 scale-105"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105 active:scale-95"
                     )}
                   >
                     {status}
@@ -211,7 +211,7 @@ export default function TenantsPage() {
               </div>
               <button
                 onClick={handleCreateTenant}
-                className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-600 hover:scale-105 hover:shadow-md hover:shadow-emerald-500/30 active:scale-95 cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 Tambah Tenant
@@ -256,14 +256,15 @@ export default function TenantsPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handleEditTenant(tenant)}
-                                className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                                className="group relative flex items-center justify-center rounded-lg p-2 text-emerald-600 transition-all duration-200 hover:bg-emerald-50 hover:text-emerald-700 hover:scale-110 active:scale-95 cursor-pointer"
+                                title="Edit Tenant"
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => handleToggleTenantStatus(tenant)}
                                 disabled={isTogglingTenant === tenant.id}
-                                className="text-sm font-semibold text-amber-600 hover:text-amber-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                className="group relative flex items-center justify-center rounded-lg p-2 text-amber-600 transition-all duration-200 hover:bg-amber-50 hover:text-amber-700 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-transparent cursor-pointer"
                                 title={tenant.is_active ? "Nonaktifkan" : "Aktifkan"}
                               >
                                 {isTogglingTenant === tenant.id ? (
@@ -274,7 +275,8 @@ export default function TenantsPage() {
                               </button>
                               <button
                                 onClick={() => handleDeleteTenant(tenant)}
-                                className="text-sm font-semibold text-rose-600 hover:text-rose-700"
+                                className="group relative flex items-center justify-center rounded-lg p-2 text-rose-600 transition-all duration-200 hover:bg-rose-50 hover:text-rose-700 hover:scale-110 active:scale-95 cursor-pointer"
+                                title="Hapus Tenant"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -368,12 +370,31 @@ function StatCard({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const variants: Record<string, string> = {
-    active: "bg-emerald-100 text-emerald-700",
-    inactive: "bg-slate-100 text-slate-700",
+  const variants: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode }> = {
+    active: {
+      bg: "bg-emerald-50",
+      text: "text-emerald-700",
+      border: "border-emerald-200",
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    inactive: {
+      bg: "bg-slate-100",
+      text: "text-slate-600",
+      border: "border-slate-200",
+      icon: <XCircle className="h-3 w-3" />,
+    },
   };
+  
+  const variant = variants[status] ?? variants.inactive;
+  
   return (
-    <span className={cn("rounded-full px-3 py-1 text-xs font-semibold capitalize", variants[status] ?? "bg-slate-100 text-slate-700")}>
+    <span className={cn(
+      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold capitalize shadow-sm",
+      variant.bg,
+      variant.text,
+      variant.border
+    )}>
+      {variant.icon}
       {status}
     </span>
   );
