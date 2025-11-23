@@ -14,6 +14,20 @@ import {
   type TenantUser,
 } from "@/lib/api-client";
 
+const getBackendUrl = () => {
+  if (typeof window === "undefined") {
+    return process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "";
+  }
+  return process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+};
+
+const getAuthHeaders = () => {
+  return {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+};
+
 export default function SuperAdminUsersPage() {
   const [tenants, setTenants] = useState<SuperAdminTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
@@ -68,34 +82,45 @@ export default function SuperAdminUsersPage() {
     setIsLoadingUsers(true);
     setError(null);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       if (!backendUrl) {
         throw new Error("Backend URL not configured");
       }
 
       const base = backendUrl.replace(/\/$/, "");
-      // Switch to tenant context
       const tenant = tenants.find(t => t.id === tenantId);
       if (!tenant) {
         throw new Error("Tenant not found");
       }
 
-      // Fetch users from tenant
-      const response = await fetch(`${base}/api/tenant/users?tenant_id=${tenantId}`, {
+      // Try super admin endpoint first
+      let response = await fetch(`${base}/api/admin/tenants/${tenantId}/users`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: getAuthHeaders(),
         credentials: "include",
       });
+
+      // If endpoint doesn't exist (404), fallback to get tenant detail
+      if (response.status === 404) {
+        response = await fetch(`${base}/api/admin/tenants/${tenantId}`, {
+          method: "GET",
+          headers: getAuthHeaders(),
+          credentials: "include",
+        });
+        
+        if (response.ok) {
+          const tenantData = await response.json();
+          setUsers(tenantData.users || []);
+          return;
+        }
+      }
 
       if (!response.ok) {
         throw new Error("Gagal memuat users");
       }
 
       const data = await response.json();
-      setUsers(data.data || []);
+      setUsers(data.data || data || []);
     } catch (err) {
       console.error("Failed to fetch users:", err);
       setError(err instanceof Error ? err.message : "Gagal memuat users");
@@ -126,27 +151,25 @@ export default function SuperAdminUsersPage() {
 
   const handleSubmit = async (payload: any) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       if (!backendUrl) {
         throw new Error("Backend URL not configured");
       }
 
+      if (!selectedTenantId) {
+        throw new Error("Tenant tidak dipilih");
+      }
+
       const base = backendUrl.replace(/\/$/, "");
       const url = selectedUser
-        ? `${base}/api/tenant/users/${selectedUser.id}`
-        : `${base}/api/tenant/users`;
+        ? `${base}/api/admin/tenants/${selectedTenantId}/users/${selectedUser.id}`
+        : `${base}/api/admin/tenants/${selectedTenantId}/users`;
 
       const response = await fetch(url, {
         method: selectedUser ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: getAuthHeaders(),
         credentials: "include",
-        body: JSON.stringify({
-          ...payload,
-          tenant_id: selectedTenantId,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -167,18 +190,19 @@ export default function SuperAdminUsersPage() {
   const handleToggleStatus = async (userId: number) => {
     setIsToggling(userId);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       if (!backendUrl) {
         throw new Error("Backend URL not configured");
       }
 
+      if (!selectedTenantId) {
+        throw new Error("Tenant tidak dipilih");
+      }
+
       const base = backendUrl.replace(/\/$/, "");
-      const response = await fetch(`${base}/api/tenant/users/${userId}/toggle-status`, {
+      const response = await fetch(`${base}/api/admin/tenants/${selectedTenantId}/users/${userId}/toggle-status`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: getAuthHeaders(),
         credentials: "include",
       });
 

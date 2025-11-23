@@ -213,11 +213,7 @@ const planFormBaseSchema = z.object({
     .max(100, "Diskon persentase maksimal 100%")
     .optional()
     .nullable(),
-  discount_amount: z
-    .number()
-    .min(0, "Diskon nominal tidak boleh negatif")
-    .optional()
-    .nullable(),
+  discount_type: z.enum(["monthly", "yearly"]).optional().nullable(),
   discount_start_date: z.string().optional().nullable(),
   discount_end_date: z.string().optional().nullable(),
   is_active: z.boolean(),

@@ -146,10 +146,10 @@ export default function SubscriptionPage() {
   const calculateDiscountedPrice = (plan: Plan) => {
     let price = parseFloat(plan.price_monthly);
     if (plan.discount_percentage) {
-      price = price * (1 - parseFloat(plan.discount_percentage) / 100);
-    }
-    if (plan.discount_amount) {
-      price = price - parseFloat(plan.discount_amount);
+      const basePrice = plan.discount_type === "yearly" && plan.price_yearly 
+        ? parseFloat(plan.price_yearly) 
+        : parseFloat(plan.price_monthly);
+      price = basePrice * (1 - parseFloat(plan.discount_percentage) / 100);
     }
     return Math.max(0, price);
   };
@@ -282,7 +282,7 @@ export default function SubscriptionPage() {
                         </span>
                         <span className="text-sm text-slate-500">/bulan</span>
                       </div>
-                      {plan.discount_percentage || plan.discount_amount ? (
+                      {plan.discount_percentage ? (
                         <p className="text-xs text-slate-500 line-through">
                           {currencyFormatter.format(parseFloat(plan.price_monthly))}/bulan
                         </p>

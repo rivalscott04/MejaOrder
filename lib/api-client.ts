@@ -1580,7 +1580,7 @@ export type Plan = {
   max_menus: number | null;
   features_json: string[] | null;
   discount_percentage: string | null;
-  discount_amount: string | null;
+  discount_type: "monthly" | "yearly" | null;
   discount_start_date: string | null;
   discount_end_date: string | null;
   is_active: boolean;
@@ -1606,7 +1606,7 @@ export type CreatePlanPayload = {
   max_menus?: number | null;
   features_json?: string[];
   discount_percentage?: number | null;
-  discount_amount?: number | null;
+  discount_type?: "monthly" | "yearly" | null;
   discount_start_date?: string | null;
   discount_end_date?: string | null;
   is_active?: boolean;

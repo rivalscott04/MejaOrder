@@ -11,7 +11,7 @@ import {
   updatePlanFormSchema,
 } from "@/lib/validations";
 import type { z } from "zod";
-import { cn } from "@/lib/utils";
+import { cn, formatPriceInput, parsePriceInput } from "@/lib/utils";
 
 type PlanFormModalProps = {
   isOpen: boolean;
@@ -44,7 +44,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
       max_menus: null,
       features_json: [],
       discount_percentage: null,
-      discount_amount: null,
+      discount_type: null, // 'monthly' or 'yearly'
       discount_start_date: null,
       discount_end_date: null,
       is_active: true,
@@ -58,8 +58,9 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
   });
 
   const discountPercentage = watch("discount_percentage");
-  const discountAmount = watch("discount_amount");
+  const discountType = watch("discount_type");
   const priceMonthly = watch("price_monthly");
+  const priceYearly = watch("price_yearly");
 
   useEffect(() => {
     if (isOpen) {
@@ -74,7 +75,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
           max_menus: plan.max_menus,
           features_json: plan.features_json || [],
           discount_percentage: plan.discount_percentage ? parseFloat(plan.discount_percentage) : null,
-          discount_amount: plan.discount_amount ? parseFloat(plan.discount_amount) : null,
+          discount_type: plan.discount_type || null,
           discount_start_date: plan.discount_start_date || null,
           discount_end_date: plan.discount_end_date || null,
           is_active: plan.is_active,
@@ -90,7 +91,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
           max_menus: null,
           features_json: [],
           discount_percentage: null,
-          discount_amount: null,
+          discount_type: null,
           discount_start_date: null,
           discount_end_date: null,
           is_active: true,
@@ -110,7 +111,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
         max_menus: data.max_menus || null,
         features_json: data.features_json && data.features_json.length > 0 ? data.features_json : undefined,
         discount_percentage: data.discount_percentage || null,
-        discount_amount: data.discount_amount || null,
+        discount_type: data.discount_type || null,
         discount_start_date: data.discount_start_date || null,
         discount_end_date: data.discount_end_date || null,
       };
@@ -123,18 +124,16 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
 
   // Calculate discounted price
   const calculateDiscountedPrice = () => {
-    if (!priceMonthly) return 0;
-    let discounted = priceMonthly;
+    const basePrice = discountType === "yearly" && priceYearly ? priceYearly : priceMonthly;
+    if (!basePrice) return 0;
     if (discountPercentage) {
-      discounted = priceMonthly * (1 - discountPercentage / 100);
+      return Math.max(0, basePrice * (1 - discountPercentage / 100));
     }
-    if (discountAmount) {
-      discounted = discounted - discountAmount;
-    }
-    return Math.max(0, discounted);
+    return basePrice;
   };
 
   const finalPrice = calculateDiscountedPrice();
+  const basePrice = discountType === "yearly" && priceYearly ? priceYearly : priceMonthly;
 
   if (!isOpen) return null;
 
@@ -147,7 +146,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-lg p-2 text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-600 hover:scale-105 active:scale-95 cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -214,17 +213,35 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
-                Harga Bulanan (Rp) <span className="text-red-500">*</span>
+                Harga Bulanan <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
-                step="0.01"
-                {...register("price_monthly", { valueAsNumber: true })}
-                className={cn(
-                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
-                  errors.price_monthly ? "border-rose-300" : ""
+              <Controller
+                name="price_monthly"
+                control={control}
+                render={({ field }) => (
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">Rp</span>
+                    <input
+                      type="text"
+                      value={field.value ? field.value.toLocaleString("id-ID") : "0"}
+                      onChange={(e) => {
+                        const price = parsePriceInput(e.target.value);
+                        field.onChange(price);
+                      }}
+                      onBlur={() => {
+                        const price = watch("price_monthly");
+                        if (price !== undefined && price < 0) {
+                          field.onChange(0);
+                        }
+                      }}
+                      className={cn(
+                        "w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300",
+                        errors.price_monthly ? "border-rose-300" : ""
+                      )}
+                      placeholder="0"
+                    />
+                  </div>
                 )}
-                placeholder="0"
               />
               {errors.price_monthly && (
                 <p className="mt-1 text-xs text-rose-600">{errors.price_monthly.message}</p>
@@ -233,17 +250,35 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
-                Harga Tahunan (Rp)
+                Harga Tahunan
               </label>
-              <input
-                type="number"
-                step="0.01"
-                {...register("price_yearly", { valueAsNumber: true })}
-                className={cn(
-                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
-                  errors.price_yearly ? "border-rose-300" : ""
+              <Controller
+                name="price_yearly"
+                control={control}
+                render={({ field }) => (
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">Rp</span>
+                    <input
+                      type="text"
+                      value={field.value ? field.value.toLocaleString("id-ID") : ""}
+                      onChange={(e) => {
+                        const price = parsePriceInput(e.target.value);
+                        field.onChange(price || null);
+                      }}
+                      onBlur={() => {
+                        const price = watch("price_yearly");
+                        if (price && price < 0) {
+                          field.onChange(null);
+                        }
+                      }}
+                      className={cn(
+                        "w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300",
+                        errors.price_yearly ? "border-rose-300" : ""
+                      )}
+                      placeholder="0"
+                    />
+                  </div>
                 )}
-                placeholder="0"
               />
               {errors.price_yearly && (
                 <p className="mt-1 text-xs text-rose-600">{errors.price_yearly.message}</p>
@@ -267,7 +302,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                   max="100"
                   {...register("discount_percentage", { valueAsNumber: true })}
                   className={cn(
-                    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
+                    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300",
                     errors.discount_percentage ? "border-rose-300" : ""
                   )}
                   placeholder="0"
@@ -279,21 +314,38 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Diskon Nominal (Rp)
+                  Diskon Untuk
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register("discount_amount", { valueAsNumber: true })}
-                  className={cn(
-                    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
-                    errors.discount_amount ? "border-rose-300" : ""
+                <Controller
+                  name="discount_type"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="flex gap-4 pt-2">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          value="monthly"
+                          checked={field.value === "monthly"}
+                          onChange={() => field.onChange("monthly")}
+                          className="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500 focus:ring-2 cursor-pointer transition-all duration-200"
+                        />
+                        <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">Bulanan</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          value="yearly"
+                          checked={field.value === "yearly"}
+                          onChange={() => field.onChange("yearly")}
+                          className="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500 focus:ring-2 cursor-pointer transition-all duration-200"
+                        />
+                        <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">Tahunan</span>
+                      </label>
+                    </div>
                   )}
-                  placeholder="0"
                 />
-                {errors.discount_amount && (
-                  <p className="mt-1 text-xs text-rose-600">{errors.discount_amount.message}</p>
+                {errors.discount_type && (
+                  <p className="mt-1 text-xs text-rose-600">{errors.discount_type.message}</p>
                 )}
               </div>
             </div>
@@ -307,7 +359,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                   type="date"
                   {...register("discount_start_date")}
                   className={cn(
-                    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
+                    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300 cursor-pointer",
                     errors.discount_start_date ? "border-rose-300" : ""
                   )}
                 />
@@ -324,7 +376,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                   type="date"
                   {...register("discount_end_date")}
                   className={cn(
-                    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
+                    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300 cursor-pointer",
                     errors.discount_end_date ? "border-rose-300" : ""
                   )}
                 />
@@ -334,20 +386,20 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
               </div>
             </div>
 
-            {(discountPercentage || discountAmount) && priceMonthly && priceMonthly > 0 && (
+            {discountPercentage && basePrice && basePrice > 0 && (
               <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
                 <p className="text-xs font-semibold text-emerald-900 mb-1">Harga Setelah Diskon:</p>
                 <p className="text-lg font-bold text-emerald-700">
                   Rp {finalPrice.toLocaleString("id-ID")}
                 </p>
-                {discountPercentage && priceMonthly && (
+                {discountPercentage && basePrice && (
                   <p className="text-xs text-emerald-600 mt-1">
-                    Diskon {discountPercentage}% = Rp {(priceMonthly * discountPercentage / 100).toLocaleString("id-ID")}
+                    Diskon {discountPercentage}% = Rp {(basePrice * discountPercentage / 100).toLocaleString("id-ID")}
                   </p>
                 )}
-                {discountAmount && (
-                  <p className="text-xs text-emerald-600 mt-1">
-                    Diskon nominal = Rp {discountAmount.toLocaleString("id-ID")}
+                {discountType && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    Diskon berlaku untuk harga {discountType === "yearly" ? "tahunan" : "bulanan"}
                   </p>
                 )}
               </div>
@@ -365,7 +417,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                 min="0"
                 {...register("max_tenants", { valueAsNumber: true })}
                 className={cn(
-                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
+                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300",
                   errors.max_tenants ? "border-rose-300" : ""
                 )}
                 placeholder="Unlimited"
@@ -384,7 +436,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                 min="0"
                 {...register("max_users", { valueAsNumber: true })}
                 className={cn(
-                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
+                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300",
                   errors.max_users ? "border-rose-300" : ""
                 )}
                 placeholder="Unlimited"
@@ -403,7 +455,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                 min="0"
                 {...register("max_menus", { valueAsNumber: true })}
                 className={cn(
-                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none",
+                  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none transition-all duration-200 hover:border-slate-300",
                   errors.max_menus ? "border-rose-300" : ""
                 )}
                 placeholder="Unlimited"
@@ -423,7 +475,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
               <button
                 type="button"
                 onClick={() => append("")}
-                className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Plus className="h-3 w-3" />
                 Tambah Fitur
@@ -444,7 +496,7 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-rose-600 transition hover:bg-rose-100"
+                    className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-rose-600 transition-all duration-200 hover:bg-rose-100 hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -460,14 +512,14 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:scale-105 active:scale-95 cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-600 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {isSubmitting ? "Menyimpan..." : plan ? "Update" : "Simpan"}
             </button>

@@ -118,12 +118,12 @@ export default function PlansPage() {
   };
 
   const calculatePlanPrice = (plan: Plan) => {
-    let price = parseFloat(plan.price_monthly);
+    const basePrice = plan.discount_type === "yearly" && plan.price_yearly 
+      ? parseFloat(plan.price_yearly) 
+      : parseFloat(plan.price_monthly);
+    let price = basePrice;
     if (plan.discount_percentage) {
-      price = price * (1 - parseFloat(plan.discount_percentage) / 100);
-    }
-    if (plan.discount_amount) {
-      price = price - parseFloat(plan.discount_amount);
+      price = basePrice * (1 - parseFloat(plan.discount_percentage) / 100);
     }
     return Math.max(0, price);
   };
@@ -162,7 +162,7 @@ export default function PlansPage() {
               ) : (
                 plans.map((plan) => {
                   const finalPrice = calculatePlanPrice(plan);
-                  const hasDiscount = plan.discount_percentage || plan.discount_amount;
+                  const hasDiscount = plan.discount_percentage;
                   return (
                     <div key={plan.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
                       <div className="flex items-start justify-between mb-2">
@@ -185,12 +185,7 @@ export default function PlansPage() {
                             </p>
                             {plan.discount_percentage && (
                               <p className="text-xs text-emerald-600 mt-1">
-                                Diskon {plan.discount_percentage}%
-                              </p>
-                            )}
-                            {plan.discount_amount && (
-                              <p className="text-xs text-emerald-600 mt-1">
-                                Diskon Rp {parseFloat(plan.discount_amount).toLocaleString("id-ID")}
+                                Diskon {plan.discount_percentage}% ({plan.discount_type === "yearly" ? "tahunan" : "bulanan"})
                               </p>
                             )}
                           </div>
