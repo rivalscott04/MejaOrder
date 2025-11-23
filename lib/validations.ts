@@ -16,11 +16,11 @@ const errorMessages = {
 // Schema untuk Login
 export const loginSchema = z.object({
   email: z
-    .string({ required_error: errorMessages.required("email") })
+    .string()
     .min(1, errorMessages.required("email"))
     .email(errorMessages.email),
   password: z
-    .string({ required_error: errorMessages.required("password") })
+    .string()
     .min(1, errorMessages.required("password"))
     .min(6, errorMessages.minLength("Password", 6)),
 });
@@ -31,27 +31,27 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 export const registerSchema = z
   .object({
     tenantName: z
-      .string({ required_error: errorMessages.required("nama tenant") })
+      .string()
       .min(1, errorMessages.required("nama tenant"))
       .min(3, "Nama tenant minimal 3 karakter"),
     tenantSlug: z
-      .string({ required_error: errorMessages.required("slug tenant") })
+      .string()
       .min(1, errorMessages.required("slug tenant"))
       .regex(/^[a-z0-9-]+$/, "Slug hanya boleh huruf kecil, angka, dan tanda hubung (-)"),
     adminName: z
-      .string({ required_error: errorMessages.required("nama admin") })
+      .string()
       .min(1, errorMessages.required("nama admin"))
       .min(2, "Nama admin minimal 2 karakter"),
     adminEmail: z
-      .string({ required_error: errorMessages.required("email admin") })
+      .string()
       .min(1, errorMessages.required("email admin"))
       .email(errorMessages.email),
     password: z
-      .string({ required_error: errorMessages.required("password") })
+      .string()
       .min(1, errorMessages.required("password"))
       .min(6, errorMessages.minLength("Password", 6)),
     confirmPassword: z
-      .string({ required_error: errorMessages.required("konfirmasi password") })
+      .string()
       .min(1, errorMessages.required("konfirmasi password")),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -64,15 +64,15 @@ export type RegisterFormData = z.infer<typeof registerSchema>;
 // Base schema untuk User Form
 const userFormBaseSchema = z.object({
   name: z
-    .string({ required_error: errorMessages.required("nama") })
+    .string()
     .min(1, errorMessages.required("nama"))
     .min(2, "Nama minimal 2 karakter"),
   email: z
-    .string({ required_error: errorMessages.required("email") })
+    .string()
     .min(1, errorMessages.required("email"))
     .email(errorMessages.email),
   role: z.enum(["tenant_admin", "cashier"], {
-    required_error: errorMessages.required("role"),
+    errorMap: () => ({ message: errorMessages.required("role") }),
   }),
   is_active: z.boolean(),
 });
@@ -80,7 +80,7 @@ const userFormBaseSchema = z.object({
 // Schema untuk Create User (password wajib)
 export const createUserFormSchema = userFormBaseSchema.extend({
   password: z
-    .string({ required_error: errorMessages.required("password") })
+    .string()
     .min(1, errorMessages.required("password"))
     .min(6, errorMessages.minLength("Password", 6)),
 });
@@ -106,7 +106,7 @@ export type UserFormData = z.infer<typeof createUserFormSchema> | z.infer<typeof
 // Schema untuk Table Form
 export const tableFormSchema = z.object({
   table_number: z
-    .string({ required_error: errorMessages.required("nomor meja") })
+    .string()
     .min(1, errorMessages.required("nomor meja"))
     .min(1, "Nomor meja tidak boleh kosong"),
   description: z.string().optional(),
@@ -118,17 +118,17 @@ export type TableFormData = z.infer<typeof tableFormSchema>;
 // Schema untuk Menu Form
 export const menuFormSchema = z.object({
   category_id: z
-    .number({ required_error: errorMessages.required("kategori") })
-    .min(1, "Mohon pilih kategori"),
+    .number()
+    .min(1, errorMessages.required("kategori")),
   name: z
-    .string({ required_error: errorMessages.required("nama menu") })
+    .string()
     .min(1, errorMessages.required("nama menu"))
     .min(2, "Nama menu minimal 2 karakter"),
   description: z.string().optional(),
   price: z
-    .number({ required_error: errorMessages.required("harga") })
+    .number()
     .min(0, "Harga tidak boleh negatif")
-    .min(1, "Harga minimal Rp 1"),
+    .min(1, errorMessages.required("harga")),
   image_url: z.string().optional(),
   is_available: z.boolean(),
   stock: z.number().nullable().optional(),
@@ -141,7 +141,7 @@ export type MenuFormData = z.infer<typeof menuFormSchema>;
 // Schema untuk Settings Form
 export const settingsFormSchema = z.object({
   name: z
-    .string({ required_error: errorMessages.required("nama tenant") })
+    .string()
     .min(1, errorMessages.required("nama tenant"))
     .min(2, "Nama tenant minimal 2 karakter"),
   address: z.string().optional(),
