@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->json('maintenance_mode')->nullable()->after('payment_settings');
-        });
+        // Check if column doesn't exist before adding
+        if (!Schema::hasColumn('tenants', 'maintenance_mode')) {
+            Schema::table('tenants', function (Blueprint $table) {
+                $table->json('maintenance_mode')->nullable();
+            });
+        }
     }
 
     /**
