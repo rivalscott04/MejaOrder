@@ -397,6 +397,12 @@ export default function CashierStatisticsPage() {
                           <span className="text-xs text-slate-400">•</span>
                           <span className="text-xs text-slate-600 font-mono">{formatOrderCode(order.order_code)}</span>
                         </div>
+                        {order.customer_name && (
+                          <div className="mb-2">
+                            <span className="text-xs text-slate-500">Customer: </span>
+                            <span className="text-xs font-medium text-slate-700">{order.customer_name}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-3">
                           <StatusBadge status={order.order_status} />
                           <PaymentStatusBadge status={order.payment_status} />
@@ -424,6 +430,7 @@ export default function CashierStatisticsPage() {
                       <th className="pb-3">Waktu</th>
                       <th className="pb-3">Meja</th>
                       <th className="pb-3">Kode</th>
+                      <th className="pb-3">Nama Customer</th>
                       <th className="pb-3">Status</th>
                       <th className="pb-3">Status Pembayaran</th>
                       <th className="pb-3">Metode</th>
@@ -440,6 +447,7 @@ export default function CashierStatisticsPage() {
                         <td className="py-3 text-slate-600">{formatTime(order.created_at)}</td>
                         <td className="py-3 font-semibold text-slate-900">Meja {order.table?.number || "-"}</td>
                         <td className="py-3 text-slate-600 font-mono">{formatOrderCode(order.order_code)}</td>
+                        <td className="py-3 text-slate-700">{order.customer_name || "-"}</td>
                         <td className="py-3">
                           <StatusBadge status={order.order_status} />
                         </td>

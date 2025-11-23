@@ -136,6 +136,8 @@ export function CustomerExperience({
   const [isInitialLoading, setIsInitialLoading] = useState(menus.length === 0);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showAddToCartToast, setShowAddToCartToast] = useState(false);
+  const [addedItemName, setAddedItemName] = useState("");
   const [paymentSettings, setPaymentSettings] = useState<{
     banks: Array<{ bank: string; account_number: string; account_name: string }>;
     qris_image: string | null;
@@ -269,6 +271,10 @@ export function CustomerExperience({
     const nextItem = enrichCartItem(payload, menuMap, optionItemMap);
     setCart((prev) => [...prev, nextItem]);
     setSelectedMenu(null); // Close the menu option sheet after adding to cart
+    
+    // Show toast notification
+    setAddedItemName(nextItem.menuName);
+    setShowAddToCartToast(true);
   }
 
   function handleRemoveFromCart(clientItemId: string) {
@@ -600,6 +606,15 @@ export function CustomerExperience({
         isOpen={showSuccessToast}
         onClose={() => setShowSuccessToast(false)}
         message={successMessage}
+        variant="success"
+        duration={2000}
+      />
+
+      {/* Add to Cart Toast */}
+      <Toast
+        isOpen={showAddToCartToast}
+        onClose={() => setShowAddToCartToast(false)}
+        message={`${addedItemName} berhasil ditambahkan ke keranjang`}
         variant="success"
         duration={2000}
       />

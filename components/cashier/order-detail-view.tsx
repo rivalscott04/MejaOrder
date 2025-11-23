@@ -12,7 +12,7 @@ import type { Order } from "@/lib/api-client";
 type OrderDetailViewProps = {
   order: Order;
   onClose?: () => void;
-  onStatusUpdate: (status: "accepted" | "preparing" | "ready" | "completed") => Promise<void>;
+  onStatusUpdate: (status: "pending" | "accepted" | "preparing" | "ready" | "completed" | "canceled") => Promise<void>;
   onPaymentUpdate: () => Promise<void>;
   onPrintInvoice?: () => void;
   isUpdating: boolean;
@@ -28,7 +28,7 @@ export function OrderDetailView({
   isUpdating,
   viewMode = "bottom-sheet",
 }: OrderDetailViewProps) {
-  const handleStatusUpdate = async (status: "accepted" | "preparing" | "ready" | "completed") => {
+  const handleStatusUpdate = async (status: "pending" | "accepted" | "preparing" | "ready" | "completed" | "canceled") => {
     await onStatusUpdate(status);
   };
 

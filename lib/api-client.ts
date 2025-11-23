@@ -300,7 +300,7 @@ export async function fetchOrderDetail(orderId: number): Promise<Order> {
   return response.json();
 }
 
-export async function updateOrderStatus(orderId: number, orderStatus: string, note?: string): Promise<Order> {
+export async function updateOrderStatus(orderId: number, orderStatus: string, note?: string, force?: boolean): Promise<Order> {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {
     throw new Error("Backend URL not configured");
@@ -309,11 +309,15 @@ export async function updateOrderStatus(orderId: number, orderStatus: string, no
   const base = backendUrl.replace(/\/$/, "");
   const url = `${base}/api/cashier/orders/${orderId}/status`;
 
+  const body: { order_status: string; note?: string; force?: boolean } = { order_status: orderStatus };
+  if (note) body.note = note;
+  if (force !== undefined) body.force = force;
+
   const response = await fetch(url, {
     method: "PATCH",
     headers: getAuthHeaders(),
     credentials: "include",
-    body: JSON.stringify({ order_status: orderStatus, note }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

@@ -80,6 +80,7 @@ export default function CashierDashboard() {
     wifiPassword: "",
   });
   const [tenantSettings, setTenantSettings] = useState<TenantSettings | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -153,6 +154,17 @@ export default function CashierDashboard() {
       }
     };
     loadTenantSettings();
+  }, []);
+
+  // Detect desktop mode
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024); // lg breakpoint
+    };
+    
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
   }, []);
 
   // Handle invoice printing
@@ -274,7 +286,7 @@ export default function CashierDashboard() {
 
   // Handle order status update (with orderId parameter for quick actions)
   const handleStatusUpdate = async (
-    newStatus: "accepted" | "preparing" | "ready" | "completed",
+    newStatus: "pending" | "accepted" | "preparing" | "ready" | "completed" | "canceled",
     orderId?: number
   ) => {
     const targetOrderId = orderId || selectedOrderId;
@@ -353,13 +365,14 @@ export default function CashierDashboard() {
 
   // Perform the actual status update
   const performStatusUpdate = async (
-    newStatus: "accepted" | "preparing" | "ready" | "completed",
+    newStatus: "pending" | "accepted" | "preparing" | "ready" | "completed" | "canceled",
     targetOrderId: number
   ) => {
     try {
       setIsUpdating(true);
       setUpdatingOrderId(targetOrderId);
-      await updateOrderStatus(targetOrderId, newStatus);
+      // In desktop mode, use force=true to allow skipping statuses
+      await updateOrderStatus(targetOrderId, newStatus, undefined, isDesktop);
       // Reload data
       await loadOrders();
       
@@ -737,6 +750,7 @@ export default function CashierDashboard() {
                       <th className="pb-3">Total</th>
                       <th className="pb-3">Metode Pembayaran</th>
                       <th className="pb-3">Status</th>
+                      <th className="pb-3">Tandai Bayar</th>
                       <th className="pb-3">Aksi</th>
                     </tr>
                   </thead>
@@ -773,13 +787,18 @@ export default function CashierDashboard() {
                                 onChange={(e) => {
                                   const newStatus = e.target.value;
                                   if (newStatus !== order.order_status) {
-                                    // Only call handleStatusUpdate for valid status transitions
-                                    const validStatuses: ("accepted" | "preparing" | "ready" | "completed")[] = ["accepted", "preparing", "ready", "completed"];
-                                    if (validStatuses.includes(newStatus as any)) {
-                                      handleStatusUpdate(newStatus as "accepted" | "preparing" | "ready" | "completed", order.id);
+                                    // In desktop mode, allow all status changes (can skip statuses)
+                                    // In mobile mode, only allow valid sequential transitions
+                                    if (isDesktop) {
+                                      // Desktop: allow all status changes
+                                      handleStatusUpdate(newStatus as "pending" | "accepted" | "preparing" | "ready" | "completed" | "canceled", order.id);
+                                    } else {
+                                      // Mobile: only allow valid sequential transitions
+                                      const validStatuses: ("accepted" | "preparing" | "ready" | "completed")[] = ["accepted", "preparing", "ready", "completed"];
+                                      if (validStatuses.includes(newStatus as any)) {
+                                        handleStatusUpdate(newStatus as "accepted" | "preparing" | "ready" | "completed", order.id);
+                                      }
                                     }
-                                    // For "pending" and "canceled", we might need a different handler
-                                    // For now, just allow the selection but don't update if it's not a valid transition
                                   }
                                 }}
                                 disabled={isUpdating && updatingOrderId === order.id}
@@ -812,6 +831,31 @@ export default function CashierDashboard() {
                                 </span>
                               )}
                           </div>
+                        </td>
+                        <td className="py-3">
+                          {order.payment_status !== "paid" ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isUpdating && updatingOrderId === order.id) return;
+                                handlePaymentUpdate(order.id);
+                              }}
+                              disabled={isUpdating && updatingOrderId === order.id}
+                              className="group relative p-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Tandai Sudah Bayar"
+                            >
+                              {isUpdating && updatingOrderId === order.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4" />
+                              )}
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                Tandai Sudah Bayar
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-3">

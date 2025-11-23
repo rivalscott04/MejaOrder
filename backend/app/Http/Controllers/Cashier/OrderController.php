@@ -87,7 +87,8 @@ class OrderController extends Controller
     {
         $this->authorizeOrder($order);
 
-        $updated = $this->statusService->transition($order, $request->validated('order_status'), $request->user(), $request->validated('note'));
+        $force = $request->boolean('force', false);
+        $updated = $this->statusService->transition($order, $request->validated('order_status'), $request->user(), $request->validated('note'), $force);
 
         return response()->json($updated);
     }
