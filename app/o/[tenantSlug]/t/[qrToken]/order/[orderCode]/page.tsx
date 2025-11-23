@@ -14,15 +14,34 @@ import {
 import { currencyFormatter, formatOrderCode } from "@/lib/utils";
 import Link from "next/link";
 
-const statusSteps = [
-  { key: "pending", label: "Pesanan dibuat" },
-  { key: "accepted", label: "Pesanan diterima kasir" },
-  { key: "preparing", label: "Sedang disiapkan" },
-  { key: "ready", label: "Siap diantar" },
+// Simplified status steps for customer view (only 3 steps)
+const customerStatusSteps = [
+  { key: "accepted", label: "Diterima" },
+  { key: "processed", label: "Diproses" },
   { key: "completed", label: "Selesai" },
 ];
 
-const statusKeyToIndex = statusSteps.reduce<Record<string, number>>((acc, step, index) => {
+// Map backend status to customer-facing status
+const mapBackendStatusToCustomerStatus = (backendStatus: string): string => {
+  if (backendStatus === "pending") return "accepted"; // Show as waiting for acceptance (will show as first step but not active)
+  if (backendStatus === "accepted") return "accepted";
+  if (backendStatus === "preparing" || backendStatus === "ready") return "processed";
+  if (backendStatus === "completed") return "completed";
+  if (backendStatus === "canceled") return "accepted"; // Show canceled orders at first step
+  return "accepted"; // Default fallback
+};
+
+// Get display label for status badge
+const getStatusDisplayLabel = (backendStatus: string): string => {
+  if (backendStatus === "pending") return "Menunggu";
+  if (backendStatus === "accepted") return "Diterima";
+  if (backendStatus === "preparing" || backendStatus === "ready") return "Diproses";
+  if (backendStatus === "completed") return "Selesai";
+  if (backendStatus === "canceled") return "Dibatalkan";
+  return "Menunggu";
+};
+
+const statusKeyToIndex = customerStatusSteps.reduce<Record<string, number>>((acc, step, index) => {
   acc[step.key] = index;
   return acc;
 }, {});
@@ -176,10 +195,14 @@ export default function OrderTrackingPage() {
     return () => clearInterval(interval);
   }, [isMockMode, apiBaseUrl, orderCode, order, fetchOrder]);
 
-  const currentIndex = order ? statusSteps.findIndex((step) => step.key === order.order_status) : 0;
-  const effectiveStatus = order 
-    ? statusSteps.find((step) => step.key === order.order_status) ?? statusSteps[0]
-    : statusSteps[0];
+  // Map backend status to customer-facing status
+  const customerStatus = order ? mapBackendStatusToCustomerStatus(order.order_status) : "accepted";
+  const currentIndex = customerStatusSteps.findIndex((step) => step.key === customerStatus);
+  const effectiveStatus = customerStatusSteps.find((step) => step.key === customerStatus) ?? customerStatusSteps[0];
+  
+  // For pending status, show timeline but don't mark any step as active yet
+  const isPending = order?.order_status === "pending";
+  const displayStatusLabel = order ? getStatusDisplayLabel(order.order_status) : "Menunggu";
 
   if (isLoading) {
     return (
@@ -272,8 +295,14 @@ export default function OrderTrackingPage() {
               <Clock className="h-4 w-4 text-emerald-600" />
               Status pesanan
             </div>
-            <span className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
-              {effectiveStatus.label}
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              order?.order_status === "canceled" 
+                ? "bg-rose-600 text-white"
+                : order?.order_status === "completed"
+                ? "bg-emerald-600 text-white"
+                : "bg-emerald-600 text-white"
+            }`}>
+              {displayStatusLabel}
             </span>
           </div>
 
@@ -287,14 +316,15 @@ export default function OrderTrackingPage() {
             </p>
           </div>
 
-          {/* Progress Timeline */}
+          {/* Progress Timeline - Simplified 3 steps for customer */}
           <div className="mt-6">
             <div className="relative flex items-center justify-between">
-              {statusSteps.map((step, index) => {
-                const isActive = step.key === order.order_status;
-                const isPast = currentIndex > index; // Status yang sudah terlewat
+              {customerStatusSteps.map((step, index) => {
+                // For pending status, don't mark any step as active
+                const isActive = !isPending && step.key === customerStatus;
+                const isPast = !isPending && currentIndex > index; // Status yang sudah terlewat
                 return (
-                  <div key={step.key} className="flex flex-col items-center text-center">
+                  <div key={step.key} className="flex flex-col items-center text-center flex-1">
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all ${
                         isActive
@@ -313,7 +343,7 @@ export default function OrderTrackingPage() {
                       )}
                     </div>
                     <p
-                      className={`mt-2 w-20 text-[11px] font-semibold transition-colors ${
+                      className={`mt-2 text-xs font-semibold transition-colors ${
                         isActive
                           ? "text-emerald-700"
                           : isPast

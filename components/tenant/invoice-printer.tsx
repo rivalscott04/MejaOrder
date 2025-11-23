@@ -38,30 +38,79 @@ type InvoicePrinterProps = {
 
 export function InvoicePrinter({ data, orderId, onPrintComplete }: InvoicePrinterProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  const hasPrintedRef = useRef(false);
+  const printAttemptedRef = useRef(false);
+  const isHandlingPrintRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple print attempts - this is critical to prevent re-opening dialog
+    if (printAttemptedRef.current || isHandlingPrintRef.current) {
+      return;
+    }
+
     // Auto print when component mounts
     const timer = setTimeout(() => {
-      if (printRef.current) {
+      if (printRef.current && !printAttemptedRef.current && !isHandlingPrintRef.current) {
+        printAttemptedRef.current = true;
+        isHandlingPrintRef.current = true;
+        
+        let fallbackTimer: NodeJS.Timeout | null = null;
+        let hasCalledComplete = false;
+        
+        const callComplete = () => {
+          if (hasCalledComplete) return;
+          hasCalledComplete = true;
+          
+          // Mark invoice as printed if orderId is provided and print was successful
+          if (orderId && hasPrintedRef.current) {
+            markInvoicePrinted(orderId).catch((error) => {
+              console.error("Failed to mark invoice as printed:", error);
+            });
+          }
+          
+          // Call onPrintComplete after print dialog closes (whether canceled or printed)
+          if (onPrintComplete) {
+            setTimeout(() => {
+              onPrintComplete();
+            }, 100);
+          }
+
+          // Clean up
+          if (fallbackTimer) {
+            clearTimeout(fallbackTimer);
+          }
+          window.removeEventListener('beforeprint', handleBeforePrint);
+          window.removeEventListener('afterprint', handleAfterPrint);
+          isHandlingPrintRef.current = false;
+        };
+        
+        // Handle print dialog events
+        const handleBeforePrint = () => {
+          hasPrintedRef.current = true;
+        };
+
+        const handleAfterPrint = () => {
+          callComplete();
+        };
+
+        // Add event listeners to detect print dialog close
+        window.addEventListener('beforeprint', handleBeforePrint);
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        // Trigger print dialog - only once
         window.print();
-        
-        // Mark invoice as printed if orderId is provided
-        if (orderId) {
-          markInvoicePrinted(orderId).catch((error) => {
-            console.error("Failed to mark invoice as printed:", error);
-            // Don't block the print flow if API call fails
-          });
-        }
-        
-        if (onPrintComplete) {
-          setTimeout(() => {
-            onPrintComplete();
-          }, 500);
-        }
+
+        // Fallback: if afterprint doesn't fire (some browsers), set a timeout
+        // This handles cases where the dialog is canceled immediately
+        fallbackTimer = setTimeout(() => {
+          callComplete();
+        }, 2000);
       }
     }, 100);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [onPrintComplete, orderId]);
 
   const formatDate = (dateString: string) => {

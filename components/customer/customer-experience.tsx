@@ -634,7 +634,7 @@ function CategoryPill({ label, active, onClick }: { label: string; active: boole
 
 function MenuCard({ menu, onSelect }: { menu: MenuItem; onSelect: () => void }) {
   return (
-    <article className="flex gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-card">
+    <article className="flex gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-card overflow-hidden">
       <div className="relative h-28 w-32 shrink-0 overflow-hidden rounded-2xl">
         <img src={menu.imageUrl} alt={menu.name} className="h-full w-full object-cover" />
         {!menu.isAvailable && (
@@ -643,23 +643,23 @@ function MenuCard({ menu, onSelect }: { menu: MenuItem; onSelect: () => void }) 
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-slate-900">{menu.name}</h3>
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0 mb-1">
+          <h3 className="text-lg font-semibold text-slate-900 truncate min-w-0 flex-1">{menu.name}</h3>
           {menu.badges?.map((badge) => (
-            <span key={badge} className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+            <span key={badge} className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 shrink-0 whitespace-nowrap">
               {badge}
             </span>
           ))}
         </div>
-        <p className="line-clamp-2 text-sm text-slate-500">{menu.description}</p>
-        <div className="mt-auto flex items-center justify-between">
-          <p className="font-semibold text-slate-900">{currencyFormatter.format(menu.price)}</p>
+        <p className="line-clamp-2 text-sm text-slate-500 min-w-0">{menu.description}</p>
+        <div className="mt-auto flex items-center justify-between gap-2 min-w-0">
+          <p className="font-semibold text-slate-900 shrink-0 whitespace-nowrap">{currencyFormatter.format(menu.price)}</p>
           <button
             disabled={!menu.isAvailable}
             onClick={onSelect}
             className={cn(
-              "rounded-full px-4 py-2 text-sm font-semibold transition",
+              "rounded-full px-4 py-2 text-sm font-semibold transition shrink-0 whitespace-nowrap",
               menu.isAvailable ? "bg-emerald-500 text-white hover:bg-emerald-600" : "bg-slate-100 text-slate-400"
             )}
           >
