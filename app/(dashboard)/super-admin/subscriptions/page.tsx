@@ -72,16 +72,9 @@ export default function SubscriptionsPage() {
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Kelola Subscriptions</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Kelola Langganan</h1>
           <p className="mt-2 text-sm text-slate-600">
-            <strong>Subscriptions = Subscription Aktif dari Tenant</strong> - Ini adalah daftar tenant yang sudah membeli dan menggunakan plan. 
-            Di sini Anda melihat tenant mana yang sudah subscribe ke plan tertentu, kapan mulai, kapan berakhir, dan statusnya (active, expired, trial). 
-            Contoh: Tenant "Demo Cafe" sudah subscribe ke plan "Growth Cafe" sejak 1 Januari 2024 dan akan berakhir 31 Desember 2024 dengan status "active".
-          </p>
-          <p className="mt-2 text-sm text-slate-500">
-            💡 <strong>Perbedaan dengan Plans:</strong> Plans adalah paket yang tersedia (seperti produk di katalog), 
-            sedangkan Subscriptions adalah tenant yang sudah membeli dan menggunakan plan tersebut (seperti transaksi pembelian). 
-            Untuk membuat atau mengedit paket, gunakan menu <strong>Plans</strong>.
+            Monitor dan kelola semua langganan aktif dari tenant. Lihat tenant mana yang sudah berlangganan ke paket tertentu beserta status dan tanggalnya.
           </p>
         </div>
 
@@ -90,7 +83,7 @@ export default function SubscriptionsPage() {
           <StatsGridSkeleton count={4} />
         ) : (
           <div className="mb-6 lg:mb-8 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total Subscription" value={stats.total} icon={<Package className="h-5 w-5" />} />
+            <StatCard label="Total Langganan" value={stats.total} icon={<Package className="h-5 w-5" />} />
             <StatCard
               label="Active"
               value={stats.active}
@@ -115,7 +108,7 @@ export default function SubscriptionsPage() {
         {/* Subscriptions List */}
         <div className="rounded-2xl lg:rounded-3xl border border-slate-200 bg-white p-4 lg:p-6 shadow-sm">
           <div className="mb-4 lg:mb-6 flex flex-col gap-3 lg:gap-4 md:flex-row md:items-center md:justify-between">
-            <SectionTitle icon={<Package className="h-4 w-4" />} title="Daftar Subscription" />
+            <SectionTitle icon={<Package className="h-4 w-4" />} title="Daftar Langganan" />
             <div className="flex gap-2">
               {(["all", "active", "expired", "trial"] as const).map((status) => (
                 <button
@@ -143,18 +136,18 @@ export default function SubscriptionsPage() {
                   <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="pb-3">Tenant</th>
-                      <th className="pb-3">Plan</th>
+                      <th className="pb-3">Paket</th>
                       <th className="pb-3">Status</th>
-                      <th className="pb-3">Start Date</th>
-                      <th className="pb-3">End Date</th>
-                      <th className="pb-3">Price</th>
+                      <th className="pb-3">Tanggal Mulai</th>
+                      <th className="pb-3">Tanggal Berakhir</th>
+                      <th className="pb-3">Harga</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredSubscriptions.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-slate-500">
-                          Tidak ada subscription ditemukan
+                          Tidak ada langganan ditemukan
                         </td>
                       </tr>
                     ) : (

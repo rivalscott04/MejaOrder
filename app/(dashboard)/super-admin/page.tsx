@@ -70,12 +70,12 @@ export default function SuperAdminDashboard() {
               variant="success"
             />
             <StatCard
-              label="Total Plans"
+              label="Total Paket"
               value={stats.totalPlans}
               icon={<Package className="h-5 w-5" />}
             />
             <StatCard
-              label="Active Subscriptions"
+              label="Langganan Aktif"
               value={stats.activeSubscriptions}
               icon={<Users className="h-5 w-5" />}
               variant="success"

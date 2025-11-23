@@ -229,7 +229,7 @@ export default function TenantsPage() {
                     <tr>
                       <th className="pb-3">Nama Tenant</th>
                       <th className="pb-3">Slug</th>
-                      <th className="pb-3">Plan</th>
+                      <th className="pb-3">Paket</th>
                       <th className="pb-3">Status</th>
                       <th className="pb-3">Expiry</th>
                       <th className="pb-3">Aksi</th>

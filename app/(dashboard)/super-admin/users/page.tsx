@@ -11,16 +11,8 @@ import { TableSkeleton } from "@/components/shared/menu-skeleton";
 import {
   fetchSuperAdminTenants,
   type SuperAdminTenant,
+  type TenantUser,
 } from "@/lib/api-client";
-
-type TenantUser = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  is_active: boolean;
-  tenant_id: number;
-};
 
 export default function SuperAdminUsersPage() {
   const [tenants, setTenants] = useState<SuperAdminTenant[]>([]);

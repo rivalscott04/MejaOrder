@@ -74,16 +74,16 @@ export default function PlansPage() {
     try {
       if (selectedPlan) {
         await updatePlan(selectedPlan.id, payload);
-        showToast("Plan berhasil diupdate", "success");
+        showToast("Paket berhasil diupdate", "success");
       } else {
         await createPlan(payload as CreatePlanPayload);
-        showToast("Plan berhasil dibuat", "success");
+        showToast("Paket berhasil dibuat", "success");
       }
       await loadData();
       setIsPlanModalOpen(false);
       setSelectedPlan(null);
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Gagal menyimpan plan", "error");
+      showToast(error instanceof Error ? error.message : "Gagal menyimpan paket", "error");
       throw error;
     }
   };
@@ -93,11 +93,11 @@ export default function PlansPage() {
     setIsDeletingPlan(true);
     try {
       await deletePlan(planToDelete.id);
-      showToast("Plan berhasil dihapus", "success");
+      showToast("Paket berhasil dihapus", "success");
       await loadData();
       setPlanToDelete(null);
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Gagal menghapus plan", "error");
+      showToast(error instanceof Error ? error.message : "Gagal menghapus paket", "error");
     } finally {
       setIsDeletingPlan(false);
     }
@@ -133,28 +133,22 @@ export default function PlansPage() {
       <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Kelola Subscription Plans</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Kelola Paket</h1>
           <p className="mt-2 text-sm text-slate-600">
-            <strong>Plans = Template/Paket yang Tersedia</strong> - Ini seperti menu di restoran. Anda membuat paket-paket subscription seperti "Basic Plan", "Growth Cafe" 
-            dengan harga, fitur, dan durasi tertentu. Plans ini adalah template yang bisa dipilih oleh tenant, tapi belum aktif sampai tenant benar-benar subscribe. 
-            Contoh: Anda membuat plan "Growth Cafe" dengan harga Rp 500.000/bulan, tapi plan ini belum digunakan sampai ada tenant yang subscribe.
-          </p>
-          <p className="mt-2 text-sm text-slate-500">
-            💡 <strong>Perbedaan dengan Subscriptions:</strong> Plans adalah paket yang tersedia (seperti produk di katalog), 
-            sedangkan Subscriptions adalah tenant yang sudah membeli dan menggunakan plan tersebut (seperti transaksi pembelian).
+            Kelola paket subscription yang tersedia untuk tenant. Paket ini adalah template yang bisa dipilih tenant untuk berlangganan.
           </p>
         </div>
 
         {/* Plans Management */}
         <div className="rounded-2xl lg:rounded-3xl border border-slate-200 bg-white p-4 lg:p-6 shadow-sm">
           <div className="mb-4 lg:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <SectionTitle icon={<Package className="h-4 w-4" />} title="Subscription Plans" />
+            <SectionTitle icon={<Package className="h-4 w-4" />} title="Daftar Paket" />
             <button
               onClick={handleCreatePlan}
               className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 w-full sm:w-auto"
             >
               <Plus className="h-4 w-4" />
-              Tambah Plan
+              Tambah Paket
             </button>
           </div>
           {isLoading ? (
@@ -163,7 +157,7 @@ export default function PlansPage() {
             <div className="grid gap-3 lg:gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {plans.length === 0 ? (
                 <div className="col-span-full py-8 text-center text-slate-500">
-                  Tidak ada plan ditemukan
+                  Tidak ada paket ditemukan
                 </div>
               ) : (
                 plans.map((plan) => {
@@ -268,8 +262,8 @@ export default function PlansPage() {
           }
         }}
         onConfirm={handleConfirmDeletePlan}
-        title="Hapus Plan"
-        message={`Apakah Anda yakin ingin menghapus plan "${planToDelete?.name}"? Tindakan ini tidak dapat dibatalkan.`}
+        title="Hapus Paket"
+        message={`Apakah Anda yakin ingin menghapus paket "${planToDelete?.name}"? Tindakan ini tidak dapat dibatalkan.`}
         confirmLabel="Hapus"
         variant="danger"
         isLoading={isDeletingPlan}
