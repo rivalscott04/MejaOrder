@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { cn, currencyFormatter, calculateMenuBadges, isBestSellerMenu, isRecommendedMenu } from "@/lib/utils";
-import { MenuSquare, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { MenuSquare, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, FolderTree, AlertCircle } from "lucide-react";
+import Link from "next/link";
 import { MenuFormModal } from "@/components/tenant/menu-form-modal";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { AlertModal } from "@/components/shared/alert-modal";
@@ -130,6 +131,15 @@ export default function MenuPage() {
   };
 
   const handleCreate = () => {
+    if (categories.length === 0) {
+      setAlertModal({
+        isOpen: true,
+        title: "Kategori Belum Tersedia",
+        message: "Anda harus membuat minimal 1 kategori terlebih dahulu sebelum dapat menambahkan menu. Silakan buat kategori di halaman Kategori terlebih dahulu.",
+        variant: "warning",
+      });
+      return;
+    }
     setSelectedMenu(null);
     setShowModal(true);
   };
@@ -271,6 +281,29 @@ export default function MenuPage() {
           {error && (
             <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-4">
               <p className="text-sm text-amber-800">{error}</p>
+            </div>
+          )}
+
+          {!isLoading && categories.length === 0 && (
+            <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">
+                    Belum Ada Kategori
+                  </p>
+                  <p className="text-sm text-amber-700 mb-3">
+                    Anda harus membuat minimal 1 kategori terlebih dahulu sebelum dapat menambahkan menu. Kategori diperlukan untuk mengorganisir menu Anda.
+                  </p>
+                  <Link
+                    href="/tenant-admin/category"
+                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                  >
+                    <FolderTree className="h-4 w-4" />
+                    Buat Kategori Sekarang
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 

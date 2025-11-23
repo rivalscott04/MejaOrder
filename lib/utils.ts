@@ -110,3 +110,57 @@ export function formatOrderCode(orderCode: string, maxLength: number = 10): stri
   return orderCode.substring(0, maxLength);
 }
 
+/**
+ * Format error message menjadi pesan yang lebih ramah untuk user awam
+ * @param error - Error object atau string
+ * @param defaultMessage - Pesan default jika error tidak dapat diidentifikasi
+ * @returns String dengan pesan error yang user-friendly
+ */
+export function formatUserFriendlyError(error: unknown, defaultMessage: string = "Terjadi kesalahan. Silakan coba lagi."): string {
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    return "Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.";
+  }
+  
+  if (error instanceof Error) {
+    const errorMessage = error.message.toLowerCase();
+    
+    // CORS errors
+    if (errorMessage.includes('cors') || errorMessage.includes('blocked') || errorMessage.includes('access-control')) {
+      return "Terjadi masalah koneksi dengan server. Silakan refresh halaman atau hubungi administrator jika masalah berlanjut.";
+    }
+    
+    // Network errors
+    if (errorMessage.includes('network') || errorMessage.includes('failed to fetch') || errorMessage.includes('err_failed')) {
+      return "Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.";
+    }
+    
+    // Timeout errors
+    if (errorMessage.includes('timeout')) {
+      return "Waktu koneksi habis. Server mungkin sedang sibuk. Silakan coba lagi dalam beberapa saat.";
+    }
+    
+    // 404 errors
+    if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+      return "Data yang diminta tidak ditemukan. Silakan refresh halaman.";
+    }
+    
+    // 500 errors
+    if (errorMessage.includes('500') || errorMessage.includes('internal server')) {
+      return "Terjadi kesalahan di server. Silakan coba lagi nanti atau hubungi administrator.";
+    }
+    
+    // 401/403 errors
+    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || 
+        errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+      return "Anda tidak memiliki izin untuk melakukan aksi ini.";
+    }
+    
+    // Return the error message if it's already user-friendly (in Indonesian)
+    if (error.message && !error.message.includes('http') && !error.message.includes('api')) {
+      return error.message;
+    }
+  }
+  
+  return defaultMessage;
+}
+

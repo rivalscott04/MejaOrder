@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Upload, Image as ImageIcon } from "lucide-react";
-import { cn, formatPriceInput, parsePriceInput } from "@/lib/utils";
+import { X, Upload, Image as ImageIcon, HelpCircle, ExternalLink } from "lucide-react";
+import { cn, formatPriceInput, parsePriceInput, formatUserFriendlyError } from "@/lib/utils";
 import { ToggleSwitch } from "@/components/shared/toggle-switch";
 import type { Menu, CreateMenuPayload, UpdateMenuPayload, Category, OptionGroup } from "@/lib/api-client";
 import { fetchCategories, fetchOptionGroups } from "@/lib/api-client";
@@ -21,6 +21,7 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
   const [categories, setCategories] = useState<Category[]>([]);
   const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -86,13 +87,14 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
 
   const loadData = async () => {
     setIsLoadingData(true);
+    setDataError(null);
     try {
       const [cats, opts] = await Promise.all([fetchCategories(), fetchOptionGroups()]);
       setCategories(cats);
       setOptionGroups(opts);
     } catch (err) {
       console.error("Failed to load data:", err);
-      // Error akan ditangani oleh parent component jika diperlukan
+      setDataError(formatUserFriendlyError(err, "Gagal memuat data. Silakan refresh halaman atau hubungi administrator jika masalah berlanjut."));
     } finally {
       setIsLoadingData(false);
     }
@@ -197,6 +199,20 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
         <form onSubmit={handleSubmit(onFormSubmit)} className="p-6 space-y-4">
           {isLoadingData ? (
             <div className="py-8 text-center text-slate-500">Memuat data...</div>
+          ) : dataError ? (
+            <div className="py-8 space-y-4">
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+                <p className="text-sm text-amber-800 font-semibold mb-2">⚠️ Gagal Memuat Data</p>
+                <p className="text-sm text-amber-700">{dataError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={loadData}
+                className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600"
+              >
+                Coba Lagi
+              </button>
+            </div>
           ) : (
             <>
               <div>
@@ -362,15 +378,51 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Option Groups</label>
-                <div className="max-h-40 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
+                <div className="mb-2 flex items-start gap-2">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Variasi Menu (Option Groups)
+                  </label>
+                  <div className="group relative flex-shrink-0">
+                    <HelpCircle className="h-4 w-4 text-slate-400 cursor-help transition hover:text-slate-600" />
+                    <div className="absolute left-0 top-6 z-50 hidden w-80 rounded-lg bg-slate-900 px-4 py-3 text-xs text-white shadow-xl group-hover:block before:absolute before:-top-1 before:left-4 before:h-2 before:w-2 before:rotate-45 before:bg-slate-900">
+                      <p className="mb-2 font-semibold text-sm">Apa itu Option Groups?</p>
+                      <p className="mb-2 text-slate-200">
+                        Option Groups adalah variasi yang bisa dipilih customer saat memesan menu ini. 
+                        Contoh: untuk menu minuman, Anda bisa menambahkan variasi seperti:
+                      </p>
+                      <ul className="mb-2 ml-4 list-disc space-y-1 text-slate-200">
+                        <li><strong className="text-white">Temperature:</strong> Hot, Iced</li>
+                        <li><strong className="text-white">Size:</strong> Small, Medium, Large</li>
+                        <li><strong className="text-white">Topping:</strong> Extra Shot, Whipped Cream</li>
+                      </ul>
+                      <p className="text-slate-300 text-xs">
+                        Customer akan diminta memilih variasi ini saat menambahkan menu ke keranjang. 
+                        Setiap variasi bisa memiliki harga tambahan.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <p className="mb-3 text-xs text-slate-500">
+                  Pilih variasi yang tersedia untuk menu ini. Customer akan bisa memilih dari variasi yang Anda centang.
+                </p>
+                <div className="max-h-40 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
                   {optionGroups.length === 0 ? (
-                    <p className="text-sm text-slate-500">Tidak ada option group</p>
+                    <div className="py-4 text-center">
+                      <p className="mb-2 text-sm text-slate-500">
+                        Belum ada variasi yang tersedia
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Buat variasi terlebih dahulu di halaman pengaturan untuk menambahkannya ke menu
+                      </p>
+                    </div>
                   ) : (
                     optionGroups.map((group) => {
                       const optionGroupIds = watch("option_group_ids") || [];
                       return (
-                        <label key={group.id} className="flex items-center gap-2">
+                        <label 
+                          key={group.id} 
+                          className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2.5 transition hover:border-emerald-300 hover:bg-emerald-50/50 cursor-pointer"
+                        >
                           <input
                             type="checkbox"
                             checked={optionGroupIds.includes(group.id)}
@@ -387,12 +439,26 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
                             }}
                             className="h-4 w-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
                           />
-                          <span className="text-sm text-slate-700">{group.name}</span>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-slate-700">{group.name}</span>
+                            {group.type && (
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {group.type === 'single_choice' ? 'Pilih 1 opsi' : 'Pilih beberapa opsi'}
+                                {group.is_required && ' • Wajib dipilih'}
+                              </p>
+                            )}
+                          </div>
                         </label>
                       );
                     })
                   )}
                 </div>
+                {optionGroups.length === 0 && (
+                  <p className="mt-2 text-xs text-slate-400">
+                    💡 <strong>Tips:</strong> Variasi berguna untuk menu yang punya pilihan seperti ukuran, suhu, level gula, atau topping. 
+                    Buat variasi terlebih dahulu sebelum menambahkannya ke menu.
+                  </p>
+                )}
               </div>
 
               <div className="rounded-lg bg-slate-50 p-3">

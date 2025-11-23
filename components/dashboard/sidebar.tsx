@@ -20,6 +20,8 @@ import {
   ChevronRight,
   Menu,
   History,
+  FolderTree,
+  Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrentUser, logout, fetchOrders, type LoginResponse } from "@/lib/api-client";
@@ -142,6 +144,8 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
     "tenant-admin": [
       { id: "overview", label: "Overview", icon: <LayoutDashboard className="h-5 w-5" />, href: "/tenant-admin" },
       { id: "menu", label: "Menu", icon: <MenuSquare className="h-5 w-5" />, href: "/tenant-admin/menu" },
+      { id: "category", label: "Kategori", icon: <FolderTree className="h-5 w-5" />, href: "/tenant-admin/category" },
+      { id: "option-groups", label: "Variasi Menu", icon: <Settings2 className="h-5 w-5" />, href: "/tenant-admin/option-groups" },
       { id: "tables", label: "Meja & QR", icon: <QrCode className="h-5 w-5" />, href: "/tenant-admin/tables" },
       { id: "users", label: "Pengguna", icon: <Users className="h-5 w-5" />, href: "/tenant-admin/users" },
       { id: "orders", label: "Pesanan", icon: <ClipboardList className="h-5 w-5" />, href: "/tenant-admin/orders" },

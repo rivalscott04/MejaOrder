@@ -1041,6 +1041,85 @@ export async function fetchCategories(): Promise<Category[]> {
   }
 }
 
+export type CreateCategoryPayload = {
+  name: string;
+  sort_order?: number;
+};
+
+export type UpdateCategoryPayload = {
+  name: string;
+  sort_order?: number;
+};
+
+export async function createCategory(payload: CreateCategoryPayload): Promise<Category> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/categories`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to create category: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function updateCategory(categoryId: number, payload: UpdateCategoryPayload): Promise<Category> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/categories/${categoryId}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to update category: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteCategory(categoryId: number): Promise<void> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/categories/${categoryId}`;
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to delete category: ${response.statusText}`);
+  }
+}
+
 // ==================== OPTION GROUP API ====================
 
 export type OptionGroup = {
@@ -1084,6 +1163,176 @@ export async function fetchOptionGroups(): Promise<OptionGroup[]> {
   }
 
   return response.json();
+}
+
+export type CreateOptionGroupPayload = {
+  name: string;
+  type: "single_choice" | "multi_choice";
+  is_required?: boolean;
+  min_select?: number | null;
+  max_select?: number | null;
+  sort_order?: number;
+};
+
+export type UpdateOptionGroupPayload = {
+  name: string;
+  type: "single_choice" | "multi_choice";
+  is_required?: boolean;
+  min_select?: number | null;
+  max_select?: number | null;
+  sort_order?: number;
+};
+
+export type CreateOptionItemPayload = {
+  label: string;
+  extra_price: number;
+  sort_order?: number;
+  is_active?: boolean;
+};
+
+export type UpdateOptionItemPayload = {
+  label: string;
+  extra_price: number;
+  sort_order?: number;
+  is_active?: boolean;
+};
+
+export async function createOptionGroup(payload: CreateOptionGroupPayload): Promise<OptionGroup> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/option-groups`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to create option group: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function updateOptionGroup(optionGroupId: number, payload: UpdateOptionGroupPayload): Promise<OptionGroup> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/option-groups/${optionGroupId}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to update option group: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteOptionGroup(optionGroupId: number): Promise<void> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/option-groups/${optionGroupId}`;
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to delete option group: ${response.statusText}`);
+  }
+}
+
+export async function createOptionItem(optionGroupId: number, payload: CreateOptionItemPayload): Promise<OptionItem> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/option-groups/${optionGroupId}/items`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to create option item: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function updateOptionItem(optionItemId: number, payload: UpdateOptionItemPayload): Promise<OptionItem> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/option-items/${optionItemId}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to update option item: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteOptionItem(optionItemId: number): Promise<void> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/option-items/${optionItemId}`;
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to delete option item: ${response.statusText}`);
+  }
 }
 
 // ==================== SUPER ADMIN API ====================
