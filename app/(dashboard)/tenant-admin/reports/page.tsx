@@ -24,6 +24,7 @@ import { InvoicePrinter } from "@/components/tenant/invoice-printer";
 import { ReportFilters, type ReportFiltersState } from "@/components/reports/report-filters";
 import {
   fetchOrders,
+  fetchCompletedOrders,
   fetchOrderDetail,
   fetchTenantSettings,
   fetchUsageStats,
@@ -64,41 +65,56 @@ export default function ReportsPage() {
   const [salesFilters, setSalesFilters] = useState<ReportFiltersState>({});
 
   // Fetch orders and tenant settings from API
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Fetch user data, orders, settings, and usage stats in parallel
-        const [userResponse, ordersResponse, settingsData, statsData] = await Promise.all([
-          getCurrentUser().catch(() => null),
-          fetchOrders({ all: true }).catch(() => ({ data: [] })),
-          fetchTenantSettings().catch(() => null), // Don't fail if settings fetch fails
-          fetchUsageStats().catch(() => null), // Don't fail if stats fetch fails
-        ]);
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Fetch user data, orders, settings, and usage stats in parallel
+      const [userResponse, incompleteOrdersResponse, completedOrdersResponse, settingsData, statsData] = await Promise.all([
+        getCurrentUser().catch(() => null),
+        fetchOrders({ 
+          all: true,
+          date_from: dateRange.start,
+          date_to: dateRange.end,
+        }).catch(() => ({ data: [] })),
+        fetchCompletedOrders({ 
+          all: true,
+          date_from: dateRange.start,
+          date_to: dateRange.end,
+        }).catch(() => ({ data: [] })),
+        fetchTenantSettings().catch(() => null), // Don't fail if settings fetch fails
+        fetchUsageStats().catch(() => null), // Don't fail if stats fetch fails
+      ]);
 
-        if (userResponse) {
-          setUserData(userResponse);
-        }
-
-        setOrders(ordersResponse.data || []);
-        if (settingsData) {
-          setTenantSettings(settingsData);
-        }
-        if (statsData) {
-          setUsageStats(statsData);
-        }
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
-        setError(err instanceof Error ? err.message : "Gagal memuat data");
-        setOrders([]);
-      } finally {
-        setIsLoading(false);
+      if (userResponse) {
+        setUserData(userResponse);
       }
-    };
 
+      // Combine incomplete and completed orders, remove duplicates
+      const allOrders = [...(incompleteOrdersResponse.data || []), ...(completedOrdersResponse.data || [])];
+      const uniqueOrders = allOrders.filter(
+        (order, index, self) => index === self.findIndex((o) => o.id === order.id)
+      );
+      setOrders(uniqueOrders);
+      
+      if (settingsData) {
+        setTenantSettings(settingsData);
+      }
+      if (statsData) {
+        setUsageStats(statsData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+      setError(err instanceof Error ? err.message : "Gagal memuat data");
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [dateRange.start, dateRange.end]);
 
   const handlePrintInvoice = async (order: Order) => {
     setIsLoadingDetail(true);
@@ -351,121 +367,132 @@ export default function ReportsPage() {
     );
   };
 
-  const renderFinancialReports = () => (
-    <div className="space-y-6">
-      {/* Date Range Filter */}
-      <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
-        <Calendar className="h-5 w-5 text-slate-500" />
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={dateRange.start}
-            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-          <span className="text-slate-500">s/d</span>
-          <input
-            type="date"
-            value={dateRange.end}
-            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
+  const renderFinancialReports = () => {
+    // Calculate financial metrics from filtered orders
+    const paidOrders = orders.filter((o) => o.payment_status === "paid");
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+    const totalTransactions = orders.length;
+    const avgTransaction = totalRevenue / Math.max(totalTransactions, 1);
+    const paidOrdersCount = paidOrders.length;
+    const paidPercentage = (paidOrdersCount / Math.max(totalTransactions, 1)) * 100;
 
-      {/* Financial Summary Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-emerald-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-emerald-700">Total Pendapatan</p>
-              <p className="mt-2 text-2xl font-bold text-emerald-900">
-                {currencyFormatter.format(12500000)}
-              </p>
-              <p className="mt-1 text-xs text-emerald-600">Periode terpilih</p>
-            </div>
-            <DollarSign className="h-8 w-8 text-emerald-600" />
+    return (
+      <div className="space-y-6">
+        {/* Date Range Filter */}
+        <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+          <Calendar className="h-5 w-5 text-slate-500" />
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <span className="text-slate-500">s/d</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-700">Total Transaksi</p>
-              <p className="mt-2 text-2xl font-bold text-blue-900">{orders.length}</p>
-              <p className="mt-1 text-xs text-blue-600">Pesanan</p>
-            </div>
-            <Receipt className="h-8 w-8 text-blue-600" />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50 to-amber-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-amber-700">Rata-rata Transaksi</p>
-              <p className="mt-2 text-2xl font-bold text-amber-900">
-                {currencyFormatter.format(12500000 / Math.max(orders.length, 1))}
-              </p>
-              <p className="mt-1 text-xs text-amber-600">Per pesanan</p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-amber-600" />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-purple-50 to-purple-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-700">Pesanan Lunas</p>
-              <p className="mt-2 text-2xl font-bold text-purple-900">
-                {orders.filter((o) => o.payment_status === "paid").length}
-              </p>
-              <p className="mt-1 text-xs text-purple-600">
-                {((orders.filter((o) => o.payment_status === "paid").length / Math.max(orders.length, 1)) * 100).toFixed(1)}%
-              </p>
-            </div>
-            <BarChart3 className="h-8 w-8 text-purple-600" />
-          </div>
-        </div>
-      </div>
 
-      {/* Payment Method Breakdown */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SectionTitle icon={<Receipt className="h-4 w-4" />} title="Pembayaran per Metode" />
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {["cash", "transfer", "qris"].map((method) => {
-            const methodOrders = orders.filter((o) => o.payment_method === method);
-            const total = methodOrders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
-            return (
-              <div key={method} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold capitalize text-slate-700">{method}</span>
-                  <span className="text-xs text-slate-500">
-                    {methodOrders.length} transaksi
-                  </span>
-                </div>
-                <p className="mt-2 text-xl font-bold text-slate-900">
-                  {currencyFormatter.format(total)}
+        {/* Financial Summary Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-emerald-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-700">Total Pendapatan</p>
+                <p className="mt-2 text-2xl font-bold text-emerald-900">
+                  {currencyFormatter.format(totalRevenue)}
                 </p>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full bg-emerald-500 transition-all"
-                    style={{
-                      width: `${(total / Math.max(orders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0), 1)) * 100}%`,
-                    }}
-                  />
-                </div>
+                <p className="mt-1 text-xs text-emerald-600">Periode terpilih</p>
               </div>
-            );
-          })}
+              <DollarSign className="h-8 w-8 text-emerald-600" />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-blue-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700">Total Transaksi</p>
+                <p className="mt-2 text-2xl font-bold text-blue-900">{totalTransactions}</p>
+                <p className="mt-1 text-xs text-blue-600">Pesanan</p>
+              </div>
+              <Receipt className="h-8 w-8 text-blue-600" />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50 to-amber-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-amber-700">Rata-rata Transaksi</p>
+                <p className="mt-2 text-2xl font-bold text-amber-900">
+                  {currencyFormatter.format(avgTransaction)}
+                </p>
+                <p className="mt-1 text-xs text-amber-600">Per pesanan</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-amber-600" />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-purple-50 to-purple-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-700">Pesanan Lunas</p>
+                <p className="mt-2 text-2xl font-bold text-purple-900">
+                  {paidOrdersCount}
+                </p>
+                <p className="mt-1 text-xs text-purple-600">
+                  {paidPercentage.toFixed(1)}%
+                </p>
+              </div>
+              <BarChart3 className="h-8 w-8 text-purple-600" />
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Revenue Chart Placeholder */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="Grafik Pendapatan" />
-        <div className="mt-6 flex h-64 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50">
-          <p className="text-sm text-slate-500">Grafik pendapatan akan ditampilkan di sini</p>
+        {/* Payment Method Breakdown */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <SectionTitle icon={<Receipt className="h-4 w-4" />} title="Pembayaran per Metode" />
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {["cash", "transfer", "qris"].map((method) => {
+              const methodOrders = orders.filter((o) => o.payment_method === method);
+              const total = methodOrders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+              const allOrdersTotal = orders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+              return (
+                <div key={method} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold capitalize text-slate-700">{method}</span>
+                    <span className="text-xs text-slate-500">
+                      {methodOrders.length} transaksi
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xl font-bold text-slate-900">
+                    {currencyFormatter.format(total)}
+                  </p>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full bg-emerald-500 transition-all"
+                      style={{
+                        width: `${(total / Math.max(allOrdersTotal, 1)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Revenue Chart Placeholder */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="Grafik Pendapatan" />
+          <div className="mt-6 flex h-64 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50">
+            <p className="text-sm text-slate-500">Grafik pendapatan akan ditampilkan di sini</p>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSalesReports = () => {
     // Filter orders berdasarkan sales filters
@@ -505,6 +532,24 @@ export default function ReportsPage() {
     const topMenus = Array.from(menuSales.entries())
       .sort((a, b) => b[1].revenue - a[1].revenue)
       .slice(0, 10);
+
+    // Calculate sales by time period
+    const timePeriods = [
+      { start: 8, end: 12, period: "08:00 - 12:00", label: "Pagi" },
+      { start: 12, end: 17, period: "12:00 - 17:00", label: "Siang" },
+      { start: 17, end: 21, period: "17:00 - 21:00", label: "Malam" },
+    ];
+
+    const salesByTimePeriod = timePeriods.map(({ start, end, period, label }) => {
+      const periodOrders = filteredOrders.filter((order) => {
+        const orderHour = new Date(order.created_at).getHours();
+        return orderHour >= start && orderHour < end;
+      });
+      const revenue = periodOrders
+        .filter((o) => o.payment_status === "paid")
+        .reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+      return { period, label, revenue, orders: periodOrders.length };
+    });
 
     return (
       <div className="space-y-6">
@@ -607,55 +652,40 @@ export default function ReportsPage() {
               </div>
             )}
           </div>
-      </div>
+        </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="Penjualan per Kategori" />
-        <div className="mt-6">
-          <div className="space-y-3">
-            {[
-              { category: "Minuman Panas", qty: 120, revenue: 6000000 },
-              { category: "Minuman Dingin", qty: 85, revenue: 4250000 },
-              { category: "Makanan", qty: 45, revenue: 2250000 },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-900">{item.category}</p>
-                  <p className="mt-1 text-sm text-slate-600">{item.qty} item terjual</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-slate-900">{currencyFormatter.format(item.revenue)}</p>
-                  <p className="text-xs text-slate-500">Revenue</p>
-                </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="Penjualan per Kategori" />
+          <div className="mt-6">
+            {filteredOrders.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">Tidak ada data penjualan</div>
+            ) : (
+              <div className="py-8 text-center text-slate-500">
+                Data kategori akan tersedia setelah integrasi dengan data menu
               </div>
-            ))}
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SectionTitle icon={<Clock className="h-4 w-4" />} title="Penjualan per Periode Waktu" />
-        <div className="mt-6">
-          <div className="space-y-3">
-            {[
-              { period: "08:00 - 12:00", label: "Pagi", revenue: 3500000, orders: 45 },
-              { period: "12:00 - 17:00", label: "Siang", revenue: 5500000, orders: 72 },
-              { period: "17:00 - 21:00", label: "Malam", revenue: 3500000, orders: 48 },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-900">{item.period}</p>
-                  <p className="mt-1 text-sm text-slate-600">{item.label} • {item.orders} pesanan</p>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <SectionTitle icon={<Clock className="h-4 w-4" />} title="Penjualan per Periode Waktu" />
+          <div className="mt-6">
+            <div className="space-y-3">
+              {salesByTimePeriod.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">{item.period}</p>
+                    <p className="mt-1 text-sm text-slate-600">{item.label} • {item.orders} pesanan</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900">{currencyFormatter.format(item.revenue)}</p>
+                    <p className="text-xs text-slate-500">Revenue</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-slate-900">{currencyFormatter.format(item.revenue)}</p>
-                  <p className="text-xs text-slate-500">Revenue</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
       </div>
     );
   };
@@ -773,71 +803,120 @@ export default function ReportsPage() {
     </div>
   );
 
-  const renderAnalyticsReports = () => (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SectionTitle icon={<TrendingUp className="h-4 w-4" />} title="Menu Terlaris" />
-        <div className="mt-6 space-y-4">
-          {[
-            { name: "Latte Special", sales: 45, revenue: 2250000, growth: "+12%" },
-            { name: "Cappuccino", sales: 32, revenue: 1600000, growth: "+8%" },
-            { name: "Espresso", sales: 28, revenue: 1400000, growth: "+5%" },
-            { name: "Mocha", sales: 22, revenue: 1100000, growth: "+15%" },
-          ].map((item, idx) => (
-            <div key={idx} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold">
-                {idx + 1}
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-slate-900">{item.name}</p>
-                <p className="mt-1 text-sm text-slate-600">{item.sales} penjualan</p>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-slate-900">{currencyFormatter.format(item.revenue)}</p>
-                <p className="text-xs text-emerald-600">{item.growth}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+  const renderAnalyticsReports = () => {
+    // Calculate best selling menus from orders
+    const menuSales = new Map<string, { qty: number; revenue: number }>();
+    orders.forEach((order) => {
+      order.items?.forEach((item) => {
+        const menuName = item.menu_name_snapshot;
+        const current = menuSales.get(menuName) || { qty: 0, revenue: 0 };
+        menuSales.set(menuName, {
+          qty: current.qty + item.qty,
+          revenue: current.revenue + parseFloat(item.subtotal),
+        });
+      });
+    });
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SectionTitle icon={<Clock className="h-4 w-4" />} title="Analisis Jam Sibuk" />
-        <div className="mt-6">
-          <div className="space-y-3">
-            {[
-              { hour: "12:00 - 13:00", orders: 35, label: "Puncak Siang" },
-              { hour: "18:00 - 19:00", orders: 28, label: "Puncak Malam" },
-              { hour: "14:00 - 15:00", orders: 15, label: "Normal" },
-            ].map((item, idx) => (
-              <div key={idx} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-slate-900">{item.hour}</span>
-                  <span className="text-sm text-slate-600">{item.label}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-3 overflow-hidden rounded-full bg-slate-200">
-                    <div
-                      className="h-full bg-emerald-500 transition-all"
-                      style={{ width: `${(item.orders / 35) * 100}%` }}
-                    />
+    const bestSellingMenus = Array.from(menuSales.entries())
+      .sort((a, b) => b[1].qty - a[1].qty)
+      .slice(0, 10)
+      .map(([name, data], idx) => ({
+        name,
+        sales: data.qty,
+        revenue: data.revenue,
+        rank: idx + 1,
+      }));
+
+    // Calculate busy hours analysis
+    const hourlyOrders = new Map<number, number>();
+    orders.forEach((order) => {
+      const hour = new Date(order.created_at).getHours();
+      hourlyOrders.set(hour, (hourlyOrders.get(hour) || 0) + 1);
+    });
+
+    // Get top 3 busiest hours
+    const busiestHours = Array.from(hourlyOrders.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([hour, count]) => {
+        const nextHour = hour + 1;
+        const hourStr = `${hour.toString().padStart(2, "0")}:00 - ${nextHour.toString().padStart(2, "0")}:00`;
+        let label = "Normal";
+        if (hour >= 12 && hour < 14) label = "Puncak Siang";
+        else if (hour >= 18 && hour < 20) label = "Puncak Malam";
+        else if (hour >= 8 && hour < 12) label = "Pagi";
+        else if (hour >= 14 && hour < 17) label = "Siang";
+        else if (hour >= 17 && hour < 21) label = "Malam";
+        return { hour: hourStr, orders: count, label };
+      });
+
+    const maxOrders = busiestHours.length > 0 ? Math.max(...busiestHours.map((h) => h.orders)) : 1;
+
+    return (
+      <div className="space-y-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <SectionTitle icon={<TrendingUp className="h-4 w-4" />} title="Menu Terlaris" />
+          <div className="mt-6 space-y-4">
+            {bestSellingMenus.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">Tidak ada data penjualan</div>
+            ) : (
+              bestSellingMenus.map((item) => (
+                <div key={item.name} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold">
+                    {item.rank}
                   </div>
-                  <span className="text-sm font-semibold text-slate-900">{item.orders} pesanan</span>
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">{item.name}</p>
+                    <p className="mt-1 text-sm text-slate-600">{item.sales} penjualan</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900">{currencyFormatter.format(item.revenue)}</p>
+                    <p className="text-xs text-emerald-600">Revenue</p>
+                  </div>
                 </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <SectionTitle icon={<Clock className="h-4 w-4" />} title="Analisis Jam Sibuk" />
+          <div className="mt-6">
+            {busiestHours.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">Tidak ada data pesanan</div>
+            ) : (
+              <div className="space-y-3">
+                {busiestHours.map((item, idx) => (
+                  <div key={idx} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-slate-900">{item.hour}</span>
+                      <span className="text-sm text-slate-600">{item.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-3 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full bg-emerald-500 transition-all"
+                          style={{ width: `${(item.orders / maxOrders) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-900">{item.orders} pesanan</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="Trend Penjualan" />
+          <div className="mt-6 flex h-64 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50">
+            <p className="text-sm text-slate-500">Grafik trend penjualan akan ditampilkan di sini</p>
           </div>
         </div>
       </div>
-
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="Trend Penjualan" />
-        <div className="mt-6 flex h-64 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50">
-          <p className="text-sm text-slate-500">Grafik trend penjualan akan ditampilkan di sini</p>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderAccountingReports = () => {
     const paidOrders = orders.filter((o) => o.payment_status === "paid");
@@ -1179,10 +1258,10 @@ export default function ReportsPage() {
                   </button>
                 ))}
               </div>
-              {allowedTabs && allowedTabs.length > 0 && allowedTabs.length < allReportTabs.length && (
+              {allowedTabs && allowedTabs.length > 0 && (allowedTabs?.length || 0) < allReportTabs.length && (
                 <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200 p-3">
                   <p className="text-xs text-blue-700">
-                    Paket Anda memiliki akses ke {allowedTabs.length} dari {allReportTabs.length} tab laporan. 
+                    Paket Anda memiliki akses ke {allowedTabs?.length || 0} dari {allReportTabs.length} tab laporan. 
                     <a href="/tenant-admin/subscription" className="font-semibold underline ml-1">
                       Upgrade paket
                     </a> untuk akses lengkap.
