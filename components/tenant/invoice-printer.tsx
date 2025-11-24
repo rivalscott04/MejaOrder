@@ -322,6 +322,14 @@ export function InvoicePrinter({ data, orderId, onPrintComplete }: InvoicePrinte
             margin-bottom: 4px;
           }
 
+          .invoice-thermal .tax-note {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            margin-top: 4px;
+            font-style: italic;
+          }
+
           .invoice-thermal .wifi-info {
             margin-top: 12px;
             padding-top: 8px;
@@ -428,6 +436,9 @@ export function InvoicePrinter({ data, orderId, onPrintComplete }: InvoicePrinte
           <div className="total-row">
             <span>TOTAL</span>
             <span>{currencyFormatter.format(data.totalAmount)}</span>
+          </div>
+          <div className="tax-note">
+            * Total sudah termasuk pajak
           </div>
         </div>
 
