@@ -16,6 +16,7 @@ import {
   Minus,
   Plus,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { AlertModal } from "@/components/shared/alert-modal";
@@ -1272,8 +1273,9 @@ function CheckoutDrawer({
             <button
               onClick={onConfirm}
               disabled={isSubmitting || !customerName.trim() || (paymentMethod === "transfer" && !selectedProofName)}
-              className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-300 flex items-center justify-center gap-2"
             >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {confirmLabel}
             </button>
             {!customerName.trim() && (
