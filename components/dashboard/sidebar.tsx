@@ -22,6 +22,7 @@ import {
   History,
   FolderTree,
   Settings2,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrentUser, logout, fetchOrders, type LoginResponse } from "@/lib/api-client";
@@ -346,7 +347,11 @@ export function Sidebar({ role, userEmail, userName, onCollapseChange, isMobileO
           )}
           title={isCollapsed ? "Logout" : undefined}
         >
-          <LogOut className="h-5 w-5 text-slate-400" />
+          {isLoggingOut ? (
+            <Loader2 className="h-5 w-5 text-slate-400 animate-spin" />
+          ) : (
+            <LogOut className="h-5 w-5 text-slate-400" />
+          )}
           {!isCollapsed && <span>{isLoggingOut ? "Keluar..." : "Keluar"}</span>}
         </button>
       </div>

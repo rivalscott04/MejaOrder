@@ -15,7 +15,7 @@ type TenantInfo = {
   tax_percentage: number;
   is_active: boolean;
 };
-import { User, Building2, LogOut } from "lucide-react";
+import { User, Building2, LogOut, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/api-client";
 import { AlertModal } from "@/components/shared/alert-modal";
@@ -176,7 +176,11 @@ export default function CashierSettingsPage() {
                 disabled={isLoggingOut}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <LogOut className="h-4 w-4" />
+                {isLoggingOut ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4" />
+                )}
                 {isLoggingOut ? "Logging out..." : "Keluar"}
               </button>
             </div>
