@@ -1,0 +1,41 @@
+{
+  "name": "MejaOrder | Solusi QR Ordering Modern untuk Cafe & Resto",
+  "short_name": "MejaOrder",
+  "description": "Revolusi Pemesanan Cafe & Resto Langsung dari Meja Pelanggan. Dengan MejaOrder, pelanggan cukup scan QR, pilih menu, bayar, dan pesanan otomatis masuk ke sistem.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favico.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favico.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "food", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Akses cepat ke dashboard",
+      "url": "/tenant-admin",
+      "icons": [
+        {
+          "src": "/favico.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
+
