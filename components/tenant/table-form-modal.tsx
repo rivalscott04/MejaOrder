@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { ToggleSwitch } from "@/components/shared/toggle-switch";
 import type { Table, CreateTablePayload, UpdateTablePayload } from "@/lib/api-client";
 import { useForm, Controller } from "react-hook-form";
@@ -142,8 +142,9 @@ export function TableFormModal({ isOpen, onClose, onSubmit, table }: TableFormMo
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isSubmitting ? "Menyimpan..." : table ? "Update" : "Simpan"}
             </button>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Upload, Image as ImageIcon, HelpCircle, ExternalLink } from "lucide-react";
+import { X, Upload, Image as ImageIcon, HelpCircle, ExternalLink, Loader2 } from "lucide-react";
 import { cn, formatPriceInput, parsePriceInput, formatUserFriendlyError } from "@/lib/utils";
 import { ToggleSwitch } from "@/components/shared/toggle-switch";
 import type { Menu, CreateMenuPayload, UpdateMenuPayload, Category, OptionGroup } from "@/lib/api-client";
@@ -494,8 +494,9 @@ export function MenuFormModal({ isOpen, onClose, onSubmit, menu }: MenuFormModal
                 <button
                   type="submit"
                   disabled={isSubmitting || isUploadingImage}
-                  className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
+                  {(isUploadingImage || isSubmitting) && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isUploadingImage
                     ? "Mengunggah gambar..."
                     : isSubmitting

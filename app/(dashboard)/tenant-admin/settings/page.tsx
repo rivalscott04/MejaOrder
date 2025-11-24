@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Settings, Upload, Image as ImageIcon, Save, X, Plus, Trash2, Banknote, QrCode } from "lucide-react";
+import { Settings, Upload, Image as ImageIcon, Save, X, Plus, Trash2, Banknote, QrCode, Loader2 } from "lucide-react";
 import { fetchTenantSettings, updateTenantSettings, getCurrentUser, type TenantSettings, type LoginResponse } from "@/lib/api-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -628,7 +628,7 @@ export default function SettingsPage() {
                 disabled={isSubmitting}
                 className="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="h-4 w-4" />
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {isSubmitting ? "Menyimpan..." : "Simpan Pengaturan"}
               </button>
             </div>

@@ -1811,6 +1811,31 @@ export async function fetchAvailablePlans(): Promise<PlanResponse> {
   throw lastError || new Error("Failed to fetch plans from all endpoints");
 }
 
+// Fetch public plans for landing page (no authentication required)
+export async function fetchPublicPlans(): Promise<{ data: Plan[] }> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/public/plans`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch public plans: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export async function fetchPlan(planId: number): Promise<Plan> {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus, Building2, Mail, Lock, Eye, EyeOff, User, Hash } from "lucide-react";
+import { UserPlus, Building2, Mail, Lock, Eye, EyeOff, User, Hash, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertModal } from "@/components/shared/alert-modal";
 import { useForm } from "react-hook-form";
@@ -302,10 +302,11 @@ export default function RegisterPage() {
               type="submit"
               disabled={isLoading}
               className={cn(
-                "w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2",
+                "w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex items-center justify-center gap-2",
                 isLoading && "opacity-50 cursor-not-allowed"
               )}
             >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               {isLoading ? "Mendaftarkan..." : "Daftar Sekarang"}
             </button>
           </form>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Save } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import { Toast } from "@/components/shared/toast";
 const getBackendUrl = () => {
   if (typeof window === "undefined") {
@@ -200,7 +200,7 @@ export default function SuperAdminSettingsPage() {
                 disabled={isSaving}
                 className="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="h-4 w-4" />
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {isSaving ? "Menyimpan..." : "Simpan Pengaturan"}
               </button>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Plus, Trash2, GripVertical } from "lucide-react";
+import { X, Plus, Trash2, GripVertical, Loader2 } from "lucide-react";
 import { cn, formatPriceInput, parsePriceInput } from "@/lib/utils";
 import type { OptionGroup, OptionItem, CreateOptionGroupPayload, UpdateOptionGroupPayload, CreateOptionItemPayload, UpdateOptionItemPayload } from "@/lib/api-client";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
@@ -349,8 +349,9 @@ export function OptionGroupFormModal({ isOpen, onClose, onSubmit, optionGroup }:
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isSubmitting ? "Menyimpan..." : optionGroup ? "Update" : "Simpan"}
             </button>
           </div>

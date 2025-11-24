@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, Loader2 } from "lucide-react";
 import { ToggleSwitch } from "@/components/shared/toggle-switch";
 import type { Plan, CreatePlanPayload, UpdatePlanPayload } from "@/lib/api-client";
 import { useForm, Controller, useFieldArray, type FieldPath } from "react-hook-form";
@@ -577,8 +577,9 @@ export function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanFormModal
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-600 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-600 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isSubmitting ? "Menyimpan..." : plan ? "Update" : "Simpan"}
             </button>
           </div>

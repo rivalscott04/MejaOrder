@@ -43,6 +43,23 @@ Route::prefix('auth')
 Route::post('payment/callback', [PaymentCallbackController::class, 'handle']);
 
 /**
+ * Public APIs (no authentication required).
+ */
+Route::prefix('public')
+    ->group(function () {
+        Route::get('plans', function () {
+            $plans = \App\Models\Plan::query()
+                ->where('is_active', true)
+                ->orderBy('price_monthly', 'asc')
+                ->get();
+            
+            return response()->json([
+                'data' => $plans,
+            ]);
+        });
+    });
+
+/**
  * Public customer APIs (QR flow).
  */
 Route::prefix('public/{tenant_slug}')

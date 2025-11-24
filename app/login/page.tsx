@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { LogIn, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
+import { LogIn, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { tenantContext } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { AlertModal } from "@/components/shared/alert-modal";
@@ -178,10 +178,11 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               className={cn(
-                "w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2",
+                "w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex items-center justify-center gap-2",
                 isLoading && "opacity-50 cursor-not-allowed"
               )}
             >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               {isLoading ? "Memproses..." : "Masuk"}
             </button>
           </form>

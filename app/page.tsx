@@ -21,6 +21,7 @@ import {
   LogIn,
 } from "lucide-react";
 import { Footer } from "@/components/shared/footer";
+import { PricingSection } from "@/components/landing/pricing-section";
 import { generateOrganizationSchema, generateServiceSchema, generateFAQSchema } from "@/lib/seo";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mejaorder.com";
@@ -300,12 +301,6 @@ export default function Home() {
               </p>
             </div>
             <div className="relative">
-              <div className="hidden md:flex absolute top-8 left-0 right-0 items-center">
-                <div className="flex-1 h-0.5 bg-slate-200"></div>
-                <div className="flex-1 h-0.5 bg-slate-200"></div>
-                <div className="flex-1 h-0.5 bg-slate-200"></div>
-                <div className="flex-1 h-0.5 bg-slate-200"></div>
-              </div>
               <div className="grid gap-8 md:grid-cols-5 relative">
                 {[
                   {
@@ -339,12 +334,15 @@ export default function Home() {
                     icon: CheckCircle2,
                   },
                 ].map((item, idx) => (
-                  <div key={idx} className="relative text-center z-10">
+                  <div key={idx} className="relative text-center">
                     <div className="mb-4 flex justify-center">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-2xl font-bold text-white shadow-lg relative z-20">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-2xl font-bold text-white shadow-lg relative z-10">
                         {item.step}
                       </div>
                     </div>
+                    {idx < 4 && (
+                      <div className="hidden md:block absolute left-1/2 top-8 h-0.5 bg-slate-200 -z-0" style={{ width: 'calc(100% + 2rem)' }} />
+                    )}
                     <h3 className="mb-2 text-lg font-semibold text-slate-900">{item.title}</h3>
                     <p className="text-sm text-slate-600">{item.description}</p>
                   </div>
@@ -355,128 +353,7 @@ export default function Home() {
         </section>
 
         {/* Pricing Section */}
-        <section className="bg-gradient-to-b from-slate-50 to-white py-20">
-          <div className="mx-auto max-w-7xl px-4">
-            <div className="mb-16 text-center">
-              <h2 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
-                Paket Harga
-              </h2>
-              <p className="text-lg text-slate-600">
-                Tersedia dalam model berlangganan bulanan tanpa kontrak panjang
-              </p>
-            </div>
-            <div className="grid gap-8 md:grid-cols-3">
-              {/* Basic Plan */}
-              <article className="rounded-2xl border-2 border-slate-200 bg-white p-8 shadow-sm">
-                <div className="mb-4">
-                  <div className="mb-2 inline-flex rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                    BASIC
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold text-slate-900">Rp 99.000</span>
-                  <span className="text-slate-600">/bulan</span>
-                </div>
-                <p className="mb-6 text-sm text-slate-600">Cocok untuk kedai kecil</p>
-                <ul className="mb-8 space-y-3">
-                  {[
-                    "Hingga 20 menu",
-                    "10 meja",
-                    "Kasir dashboard",
-                    "Pembayaran cash & transfer",
-                    "QR Scan ordering",
-                  ].map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
-                      <span className="text-sm text-slate-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/register"
-                  className="block w-full rounded-xl border-2 border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
-                  aria-label="Daftar Paket Basic"
-                >
-                  Mulai Sekarang
-                </Link>
-              </article>
-
-              {/* Pro Plan - Featured */}
-              <article className="relative rounded-2xl border-2 border-emerald-500 bg-white p-8 shadow-xl">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-emerald-500 px-4 py-1 text-xs font-semibold text-white">
-                    PALING LARIS
-                  </span>
-                </div>
-                <div className="mb-4">
-                  <div className="mb-2 inline-flex rounded-lg bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    PRO
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold text-slate-900">Rp 199.000</span>
-                  <span className="text-slate-600">/bulan</span>
-                </div>
-                <p className="mb-6 text-sm text-slate-600">Untuk cafe yang ingin fitur lengkap</p>
-                <ul className="mb-8 space-y-3">
-                  {[
-                    "Menu & meja unlimited",
-                    "Support QRIS",
-                    "Laporan Penjualan",
-                    "Manajemen variasi menu",
-                    "Prioritas support",
-                  ].map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
-                      <span className="text-sm text-slate-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/register"
-                  className="block w-full rounded-xl bg-emerald-500 px-6 py-3 text-center font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600"
-                  aria-label="Daftar Paket Pro"
-                >
-                  Mulai Sekarang
-                </Link>
-              </article>
-
-              {/* Enterprise Plan */}
-              <article className="rounded-2xl border-2 border-slate-200 bg-white p-8 shadow-sm">
-                <div className="mb-4">
-                  <div className="mb-2 inline-flex rounded-lg bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                    ENTERPRISE
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold text-slate-900">Custom</span>
-                </div>
-                <p className="mb-6 text-sm text-slate-600">Untuk jaringan resto & franchise</p>
-                <ul className="mb-8 space-y-3">
-                  {[
-                    "Multi-cabang",
-                    "Custom domain",
-                    "Integrasi API",
-                    "SLA premium",
-                    "Dedicated support",
-                  ].map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
-                      <span className="text-sm text-slate-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/register"
-                  className="block w-full rounded-xl border-2 border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
-                  aria-label="Hubungi Sales untuk Paket Enterprise"
-                >
-                  Hubungi Sales
-                </Link>
-              </article>
-            </div>
-          </div>
-        </section>
+        <PricingSection />
 
         {/* Testimonials Section */}
         <section className="bg-white py-20">
