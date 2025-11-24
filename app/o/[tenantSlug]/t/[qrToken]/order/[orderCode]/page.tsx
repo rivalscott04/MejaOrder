@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Clock,
@@ -10,6 +10,8 @@ import {
   ArrowLeft,
   Copy,
   Check,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { currencyFormatter, formatOrderCode } from "@/lib/utils";
 import Link from "next/link";
@@ -89,6 +91,10 @@ export default function OrderTrackingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showThankYouModal, setShowThankYouModal] = useState(false);
+  const [hasShownCelebration, setHasShownCelebration] = useState(false);
+  const previousStatusRef = useRef<string | null>(null);
   const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "";
   const isMockMode = !apiBaseUrl;
 
@@ -117,29 +123,57 @@ export default function OrderTrackingPage() {
         if (storedOrderData) {
           try {
             const parsedOrder = JSON.parse(storedOrderData);
+            const previousStatus = previousStatusRef.current;
             setOrder(parsedOrder);
+            // Check if status is completed for mock mode
+            if (
+              parsedOrder.order_status === "completed" && 
+              previousStatus !== "completed" && 
+              !hasShownCelebration
+            ) {
+              setShowCelebration(true);
+              setShowThankYouModal(true);
+              setHasShownCelebration(true);
+              setTimeout(() => setShowCelebration(false), 3000);
+            }
+            previousStatusRef.current = parsedOrder.order_status;
             setError(null);
           } catch {
             // Fallback to default mock order
-            setOrder({
+            const defaultOrder: OrderSummary = {
               order_code: orderCode,
               payment_method: "cash",
               payment_status: "unpaid",
               order_status: "pending",
               total_amount: 0,
               items: [],
-            });
+            };
+            setOrder(defaultOrder);
           }
         } else {
           // Fallback to default mock order
-          setOrder({
+          const defaultOrder: OrderSummary = {
             order_code: orderCode,
             payment_method: "cash",
             payment_status: "unpaid",
             order_status: "pending",
             total_amount: 0,
             items: [],
-          });
+          };
+          const previousStatus = previousStatusRef.current;
+          setOrder(defaultOrder);
+          // Check if status is completed for mock mode
+          if (
+            defaultOrder.order_status === "completed" && 
+            previousStatus !== "completed" && 
+            !hasShownCelebration
+          ) {
+            setShowCelebration(true);
+            setShowThankYouModal(true);
+            setHasShownCelebration(true);
+            setTimeout(() => setShowCelebration(false), 3000);
+          }
+          previousStatusRef.current = defaultOrder.order_status;
         }
         setError(null);
       } else {
@@ -167,8 +201,23 @@ export default function OrderTrackingPage() {
       }
 
       const data: OrderSummary = await response.json();
+      const previousStatus = previousStatusRef.current;
       setOrder(data);
       setError(null);
+      
+      // Trigger celebration and modal when status changes to completed (from non-completed)
+      if (
+        data.order_status === "completed" && 
+        previousStatus !== "completed" && 
+        !hasShownCelebration
+      ) {
+        setShowCelebration(true);
+        setShowThankYouModal(true);
+        setHasShownCelebration(true);
+        // Hide celebration after animation
+        setTimeout(() => setShowCelebration(false), 3000);
+      }
+      previousStatusRef.current = data.order_status;
     } catch (err) {
       console.error("Failed to fetch order:", err);
       setError("Terjadi kesalahan saat memuat data pesanan.");
@@ -234,8 +283,30 @@ export default function OrderTrackingPage() {
     );
   }
 
+  const isCompleted = order?.order_status === "completed";
+
+  // Show modal if completed when first loading (not from status change)
+  useEffect(() => {
+    if (isCompleted && !hasShownCelebration && order && previousStatusRef.current === null) {
+      // First time loading with completed status
+      setShowThankYouModal(true);
+      setHasShownCelebration(true);
+    }
+  }, [isCompleted, hasShownCelebration, order]);
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+      {/* Celebration Confetti Animation */}
+      {showCelebration && <ConfettiAnimation />}
+      
+      {/* Thank You Modal */}
+      {showThankYouModal && isCompleted && (
+        <ThankYouModal 
+          onClose={() => setShowThankYouModal(false)} 
+          orderCode={order?.order_code || ""}
+        />
+      )}
+      
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         {/* Header */}
         <div className="mb-6">
@@ -450,12 +521,131 @@ export default function OrderTrackingPage() {
         <div className="mt-6">
           <Link
             href={`/o/${tenantSlug}/t/${qrToken}`}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
           >
-            Pesan Lagi
+            {isCompleted ? (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Pesan Lagi
+              </>
+            ) : (
+              "Pesan Lagi"
+            )}
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Thank You Modal Component
+function ThankYouModal({ onClose, orderCode }: { onClose: () => void; orderCode: string }) {
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
+  return (
+    <div 
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.3s_ease-out]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="w-full max-w-md rounded-3xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 p-8 shadow-2xl animate-[fadeInScale_0.5s_ease-out]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 rounded-full p-2 text-slate-400 transition hover:bg-white/80 hover:text-slate-600"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {/* Content */}
+        <div className="flex flex-col items-center text-center space-y-6">
+          {/* Icon with glow effect */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-400 rounded-full blur-2xl opacity-40 animate-pulse"></div>
+            <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full p-6 shadow-xl">
+              <CheckCircle2 className="h-16 w-16 text-white" />
+            </div>
+          </div>
+
+          {/* Message */}
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold text-emerald-900">
+              Pesanan Selesai! 
+            </h2>
+            <p className="text-base text-emerald-800 leading-relaxed">
+              Terima kasih sudah memesan! Pesanan Anda sudah siap.
+            </p>
+            <p className="text-sm text-emerald-700">
+              Selamat menikmati dan semoga harimu menyenangkan!
+            </p>
+          </div>
+
+          {/* Order Code */}
+          <div className="w-full rounded-2xl border border-emerald-200 bg-white/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-1">
+              Kode Pesanan
+            </p>
+            <p className="text-lg font-bold text-slate-900 font-mono">
+              {formatOrderCode(orderCode)}
+            </p>
+          </div>
+
+          {/* Action Button */}
+          <button
+            onClick={onClose}
+            className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:from-emerald-600 hover:to-emerald-700 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span className="flex items-center justify-center gap-2">
+              <Sparkles className="h-5 w-5" />
+              Mengerti, Terima Kasih!
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Confetti Animation Component
+function ConfettiAnimation() {
+  const confettiCount = 50;
+  const [confetti] = useState(() => 
+    Array.from({ length: confettiCount }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.5,
+      duration: 2 + Math.random() * 2,
+      initialRotation: Math.random() * 360,
+      color: ['bg-emerald-400', 'bg-emerald-500', 'bg-emerald-600', 'bg-yellow-400', 'bg-yellow-500', 'bg-amber-400', 'bg-amber-500'][Math.floor(Math.random() * 7)],
+    }))
+  );
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+      {confetti.map((item) => (
+        <div
+          key={item.id}
+          className={`absolute w-2 h-2 ${item.color} rounded-sm`}
+          style={{
+            left: `${item.left}%`,
+            top: '-10px',
+            animation: `confettiFall ${item.duration}s ease-in ${item.delay}s forwards`,
+            transform: `rotate(${item.initialRotation}deg)`,
+          }}
+        />
+      ))}
     </div>
   );
 }
