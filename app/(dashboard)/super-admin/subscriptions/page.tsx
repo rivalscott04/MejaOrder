@@ -3,15 +3,20 @@
 import { useState, useEffect } from "react";
 import { SectionTitle } from "@/components/shared/section-title";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { fetchSuperAdminTenants, type SuperAdminTenant } from "@/lib/api-client";
-import { Users, Calendar, Package } from "lucide-react";
+import { fetchSuperAdminTenants, cancelTenantSubscription, type SuperAdminTenant } from "@/lib/api-client";
+import { Users, Calendar, Package, X, Loader2 } from "lucide-react";
 import { StatsGridSkeleton, TableSkeleton } from "@/components/shared/menu-skeleton";
 import { cn } from "@/lib/utils";
+import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { Toast } from "@/components/shared/toast";
 
 export default function SubscriptionsPage() {
   const [tenants, setTenants] = useState<SuperAdminTenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expired" | "trial">("all");
+  const [cancelTarget, setCancelTarget] = useState<{ tenantId: number; subscriptionId: number; tenantName: string } | null>(null);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [toast, setToast] = useState<{ message: string; variant: "success" | "error" } | null>(null);
 
   const loadData = async () => {
     try {
@@ -65,6 +70,29 @@ export default function SubscriptionsPage() {
         {status}
       </span>
     );
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!cancelTarget) return;
+
+    try {
+      setIsCanceling(true);
+      await cancelTenantSubscription(cancelTarget.tenantId, cancelTarget.subscriptionId);
+      setToast({ 
+        message: `Subscription untuk ${cancelTarget.tenantName} berhasil dibatalkan`, 
+        variant: "success" 
+      });
+      setCancelTarget(null);
+      await loadData();
+    } catch (error) {
+      console.error("Failed to cancel subscription:", error);
+      setToast({ 
+        message: error instanceof Error ? error.message : "Gagal membatalkan subscription", 
+        variant: "error" 
+      });
+    } finally {
+      setIsCanceling(false);
+    }
   };
 
   return (
@@ -141,34 +169,55 @@ export default function SubscriptionsPage() {
                       <th className="pb-3">Tanggal Mulai</th>
                       <th className="pb-3">Tanggal Berakhir</th>
                       <th className="pb-3">Harga</th>
+                      <th className="pb-3">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredSubscriptions.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-500">
+                        <td colSpan={7} className="py-8 text-center text-slate-500">
                           Tidak ada langganan ditemukan
                         </td>
                       </tr>
                     ) : (
-                      filteredSubscriptions.map((sub) => (
-                        <tr key={sub.id} className="hover:bg-slate-50">
-                          <td className="py-4 font-semibold text-slate-900">{sub.tenant.name}</td>
-                          <td className="py-4 text-slate-600">{sub.plan?.name || "-"}</td>
-                          <td className="py-4">{getStatusBadge(sub.status)}</td>
-                          <td className="py-4 text-slate-600">
-                            {new Date(sub.start_date).toLocaleDateString("id-ID")}
-                          </td>
-                          <td className="py-4 text-slate-600">
-                            {new Date(sub.end_date).toLocaleDateString("id-ID")}
-                          </td>
-                          <td className="py-4 text-slate-600">
-                            {sub.plan?.price_monthly
-                              ? `Rp ${parseFloat(sub.plan.price_monthly).toLocaleString("id-ID")}/bulan`
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))
+                      filteredSubscriptions.map((sub) => {
+                        const canCancel = sub.status === "active" || sub.status === "trial";
+                        return (
+                          <tr key={sub.id} className="hover:bg-slate-50">
+                            <td className="py-4 font-semibold text-slate-900">{sub.tenant.name}</td>
+                            <td className="py-4 text-slate-600">{sub.plan?.name || "-"}</td>
+                            <td className="py-4">{getStatusBadge(sub.status)}</td>
+                            <td className="py-4 text-slate-600">
+                              {new Date(sub.start_date).toLocaleDateString("id-ID")}
+                            </td>
+                            <td className="py-4 text-slate-600">
+                              {new Date(sub.end_date).toLocaleDateString("id-ID")}
+                            </td>
+                            <td className="py-4 text-slate-600">
+                              {sub.plan?.price_monthly
+                                ? `Rp ${parseFloat(sub.plan.price_monthly).toLocaleString("id-ID")}/bulan`
+                                : "-"}
+                            </td>
+                            <td className="py-4">
+                              {canCancel ? (
+                                <button
+                                  onClick={() => setCancelTarget({ 
+                                    tenantId: sub.tenant.id, 
+                                    subscriptionId: sub.id,
+                                    tenantName: sub.tenant.name 
+                                  })}
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-600"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  Batalkan
+                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -177,6 +226,27 @@ export default function SubscriptionsPage() {
           )}
         </div>
       </div>
+
+      {toast && (
+        <Toast
+          isOpen={!!toast}
+          message={toast.message}
+          variant={toast.variant}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={handleCancelSubscription}
+        title="Batalkan Subscription"
+        message={cancelTarget ? `Apakah Anda yakin ingin membatalkan subscription untuk tenant "${cancelTarget.tenantName}"? Setelah dibatalkan, tenant tidak akan dapat menggunakan fitur premium hingga subscription diaktifkan kembali.` : ""}
+        confirmLabel="Ya, Batalkan"
+        cancelLabel="Tidak"
+        variant="danger"
+        isLoading={isCanceling}
+      />
     </DashboardLayout>
   );
 }

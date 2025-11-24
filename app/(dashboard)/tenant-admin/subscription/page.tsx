@@ -5,7 +5,8 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { SectionTitle } from "@/components/shared/section-title";
 import { Toast } from "@/components/shared/toast";
 import { StatsGridSkeleton } from "@/components/shared/menu-skeleton";
-import { fetchTenantSettings, fetchAvailablePlans, type Plan, type TenantSettings } from "@/lib/api-client";
+import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { fetchTenantSettings, fetchAvailablePlans, cancelSubscription, type Plan, type TenantSettings } from "@/lib/api-client";
 import { cn, currencyFormatter, formatFeatureText } from "@/lib/utils";
 import { getCurrentUser, type LoginResponse } from "@/lib/api-client";
 import {
@@ -17,6 +18,7 @@ import {
   ArrowUpRight,
   Loader2,
   AlertCircle,
+  X,
 } from "lucide-react";
 
 type SubscriptionInfo = {
@@ -35,6 +37,8 @@ export default function SubscriptionPage() {
   const [userData, setUserData] = useState<LoginResponse | null>(null);
   const [toast, setToast] = useState<{ message: string; variant: "success" | "error" } | null>(null);
   const [tenantName, setTenantName] = useState<string>("");
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const loadData = async () => {
     try {
@@ -102,6 +106,28 @@ export default function SubscriptionPage() {
     });
   };
 
+  const handleCancelSubscription = async () => {
+    try {
+      setIsCanceling(true);
+      await cancelSubscription();
+      setToast({ 
+        message: "Subscription berhasil dibatalkan", 
+        variant: "success" 
+      });
+      setShowCancelConfirm(false);
+      // Reload data to reflect the cancellation
+      await loadData();
+    } catch (error) {
+      console.error("Failed to cancel subscription:", error);
+      setToast({ 
+        message: error instanceof Error ? error.message : "Gagal membatalkan subscription", 
+        variant: "error" 
+      });
+    } finally {
+      setIsCanceling(false);
+    }
+  };
+
   const displayName = userData?.user.name || "Admin";
   const displayEmail = userData?.user.email || "";
 
@@ -113,6 +139,8 @@ export default function SubscriptionPage() {
         return "text-rose-600 bg-rose-50 border-rose-200";
       case "trial":
         return "text-amber-600 bg-amber-50 border-amber-200";
+      case "canceled":
+        return "text-slate-600 bg-slate-50 border-slate-200";
       default:
         return "text-slate-600 bg-slate-50 border-slate-200";
     }
@@ -123,6 +151,8 @@ export default function SubscriptionPage() {
       case "active":
         return <CheckCircle2 className="h-4 w-4" />;
       case "expired":
+        return <XCircle className="h-4 w-4" />;
+      case "canceled":
         return <XCircle className="h-4 w-4" />;
       default:
         return <AlertCircle className="h-4 w-4" />;
@@ -219,6 +249,56 @@ export default function SubscriptionPage() {
                     </div>
                   </div>
                 </div>
+                {(subscriptionInfo.status.toLowerCase() === "active" || subscriptionInfo.status.toLowerCase() === "trial") && (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm text-slate-600 mb-2">
+                          Anda dapat membatalkan subscription kapan saja. Setelah dibatalkan, akses ke fitur premium akan berakhir pada tanggal berakhir subscription.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowCancelConfirm(true)}
+                      disabled={isCanceling}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition",
+                        "bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed",
+                        "shadow-sm hover:shadow-md"
+                      )}
+                    >
+                      {isCanceling ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Membatalkan...
+                        </>
+                      ) : (
+                        <>
+                          <X className="h-4 w-4" />
+                          Batalkan Subscription
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+                {subscriptionInfo.status.toLowerCase() === "canceled" && (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-slate-500 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-slate-900 mb-1">
+                            Subscription Telah Dibatalkan
+                          </p>
+                          <p className="text-xs text-slate-600">
+                            Subscription Anda telah dibatalkan. Akses ke fitur premium akan berakhir pada {formatDate(subscriptionInfo.expiresAt)}. 
+                            Untuk mengaktifkan kembali, silakan hubungi super admin.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="mt-4 lg:mt-6 rounded-xl bg-amber-50 border border-amber-200 p-4 lg:p-6">
@@ -402,6 +482,18 @@ export default function SubscriptionPage() {
           onClose={() => setToast(null)}
         />
       )}
+
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelSubscription}
+        title="Batalkan Subscription"
+        message="Apakah Anda yakin ingin membatalkan subscription? Setelah dibatalkan, Anda tidak akan dapat menggunakan fitur premium hingga subscription diaktifkan kembali."
+        confirmLabel="Ya, Batalkan"
+        cancelLabel="Tidak"
+        variant="danger"
+        isLoading={isCanceling}
+      />
     </DashboardLayout>
   );
 }

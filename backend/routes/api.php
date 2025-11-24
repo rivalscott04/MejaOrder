@@ -76,6 +76,20 @@ Route::prefix('public/{tenant_slug}')
     });
 
 /**
+ * Tenant admin APIs - Subscription management (without subscription.active check)
+ */
+Route::prefix('tenant')
+    ->middleware([
+        \Illuminate\Session\Middleware\StartSession::class,
+        'auth',
+        'role:tenant_admin',
+        'tenant.context',
+    ])
+    ->group(function () {
+        Route::post('subscription/cancel', [TenantTenantController::class, 'cancelSubscription']);
+    });
+
+/**
  * Tenant admin APIs.
  */
 Route::prefix('tenant')
@@ -159,6 +173,7 @@ Route::prefix('admin')
         Route::post('tenants/{tenant}/users', [SuperAdminTenantController::class, 'createUser']);
         Route::put('tenants/{tenant}/users/{user}', [SuperAdminTenantController::class, 'updateUser']);
         Route::post('tenants/{tenant}/users/{user}/toggle-status', [SuperAdminTenantController::class, 'toggleUserStatus']);
+        Route::post('tenants/{tenant}/subscriptions/{subscription}/cancel', [SuperAdminTenantController::class, 'cancelSubscription']);
         Route::apiResource('plans', SuperAdminPlanController::class);
         Route::get('settings/maintenance-mode', [SuperAdminSettingsController::class, 'getMaintenanceMode']);
         Route::put('settings/maintenance-mode', [SuperAdminSettingsController::class, 'updateMaintenanceMode']);

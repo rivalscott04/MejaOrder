@@ -42,5 +42,35 @@ class SubscriptionService
             'is_auto_renew' => $autoRenew,
         ]);
     }
+
+    /**
+     * Cancel active subscription for a tenant.
+     * Sets status to 'canceled' and disables auto-renew.
+     */
+    public function cancel(Tenant $tenant): ?TenantSubscription
+    {
+        $activeSubscription = $this->current($tenant);
+        
+        if (!$activeSubscription) {
+            // Try to find any active subscription (including trial)
+            $activeSubscription = TenantSubscription::query()
+                ->where('tenant_id', $tenant->id)
+                ->whereIn('status', ['active', 'trial'])
+                ->whereDate('end_date', '>=', now()->toDateString())
+                ->latest('end_date')
+                ->first();
+        }
+
+        if (!$activeSubscription) {
+            return null;
+        }
+
+        $activeSubscription->update([
+            'status' => 'canceled',
+            'is_auto_renew' => false,
+        ]);
+
+        return $activeSubscription->fresh();
+    }
 }
 

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\StoreTenantRequest;
 use App\Http\Requests\SuperAdmin\UpdateTenantRequest;
 use App\Models\Tenant;
+use App\Models\TenantSubscription;
 use App\Models\User;
+use App\Services\Tenant\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 
 class TenantController extends Controller
@@ -114,6 +116,40 @@ class TenantController extends Controller
         $user->save();
 
         return response()->json(['is_active' => $user->is_active]);
+    }
+
+    /**
+     * Cancel subscription for a tenant (by subscription ID).
+     */
+    public function cancelSubscription(Tenant $tenant, TenantSubscription $subscription): JsonResponse
+    {
+        // Verify subscription belongs to tenant
+        if ($subscription->tenant_id !== $tenant->id) {
+            return response()->json(['message' => 'Subscription tidak ditemukan untuk tenant ini'], 404);
+        }
+
+        // Check if subscription is already canceled
+        if ($subscription->status === 'canceled') {
+            return response()->json(['message' => 'Subscription sudah dibatalkan sebelumnya'], 400);
+        }
+
+        $subscriptionService = new SubscriptionService();
+        $canceledSubscription = $subscriptionService->cancel($tenant);
+
+        if (!$canceledSubscription) {
+            return response()->json([
+                'message' => 'Tidak ada subscription aktif yang dapat dibatalkan'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Subscription berhasil dibatalkan',
+            'subscription' => [
+                'id' => $canceledSubscription->id,
+                'status' => $canceledSubscription->status,
+                'plan' => $canceledSubscription->plan->name ?? '-',
+            ]
+        ]);
     }
 }
 

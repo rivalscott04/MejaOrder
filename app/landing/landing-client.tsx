@@ -25,7 +25,7 @@ import { generateOrganizationSchema, generateServiceSchema, generateFAQSchema } 
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mejaorder.com";
 
-export default function Home() {
+export function LandingPageClient() {
   // Structured Data for SEO
   const organizationSchema = generateOrganizationSchema();
   const serviceSchema = generateServiceSchema({

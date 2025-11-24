@@ -142,5 +142,31 @@ class TenantController extends Controller
 
         return response()->json($stats);
     }
+
+    /**
+     * Cancel current subscription.
+     */
+    public function cancelSubscription(): JsonResponse
+    {
+        $tenant = tenant();
+        $subscriptionService = new SubscriptionService();
+        
+        $canceledSubscription = $subscriptionService->cancel($tenant);
+
+        if (!$canceledSubscription) {
+            return response()->json([
+                'message' => 'Tidak ada subscription aktif yang dapat dibatalkan'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Subscription berhasil dibatalkan',
+            'subscription' => [
+                'id' => $canceledSubscription->id,
+                'status' => $canceledSubscription->status,
+                'plan' => $canceledSubscription->plan->name ?? '-',
+            ]
+        ]);
+    }
 }
 

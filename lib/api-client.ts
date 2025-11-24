@@ -1084,6 +1084,29 @@ export async function updateTenantSettings(payload: UpdateTenantSettingsPayload)
   return response.json();
 }
 
+export async function cancelSubscription(): Promise<{ message: string; subscription: { id: number; status: string; plan: string } }> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/tenant/subscription/cancel`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to cancel subscription: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 // ==================== CATEGORY API ====================
 
 export type Category = {
@@ -1624,6 +1647,29 @@ export async function deleteTenant(tenantId: number): Promise<void> {
     const error = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(error.message || `Failed to delete tenant: ${response.statusText}`);
   }
+}
+
+export async function cancelTenantSubscription(tenantId: number, subscriptionId: number): Promise<{ message: string; subscription: { id: number; status: string; plan: string } }> {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL not configured");
+  }
+
+  const base = backendUrl.replace(/\/$/, "");
+  const url = `${base}/api/admin/tenants/${tenantId}/subscriptions/${subscriptionId}/cancel`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Failed to cancel subscription: ${response.statusText}`);
+  }
+
+  return response.json();
 }
 
 export async function toggleTenantStatus(tenantId: number): Promise<{ is_active: boolean }> {
