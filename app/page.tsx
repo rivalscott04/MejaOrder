@@ -299,52 +299,57 @@ export default function Home() {
                 Proses sederhana, hasil maksimal
               </p>
             </div>
-            <div className="grid gap-8 md:grid-cols-5">
-              {[
-                {
-                  step: "1",
-                  title: "Pelanggan Duduk & Scan QR",
-                  description: "QR sudah ditempel di setiap meja.",
-                  icon: QrCode,
-                },
-                {
-                  step: "2",
-                  title: "Menu Digital Terbuka",
-                  description: "Pelanggan langsung pilih menu & variasi.",
-                  icon: Menu,
-                },
-                {
-                  step: "3",
-                  title: "Pembayaran Mudah",
-                  description: "Cash, Transfer, atau QRIS.",
-                  icon: CreditCard,
-                },
-                {
-                  step: "4",
-                  title: "Kasir Menerima Pesanan",
-                  description: "Dashboard real-time, tanpa delay.",
-                  icon: Monitor,
-                },
-                {
-                  step: "5",
-                  title: "Pesanan Disiapkan & Diantar",
-                  description: "Proses cepat, jelas, dan minim error.",
-                  icon: CheckCircle2,
-                },
-              ].map((item, idx) => (
-                <div key={idx} className="relative text-center">
-                  <div className="mb-4 flex justify-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-2xl font-bold text-white shadow-lg">
-                      {item.step}
+            <div className="relative">
+              <div className="hidden md:flex absolute top-8 left-0 right-0 items-center">
+                <div className="flex-1 h-0.5 bg-slate-200"></div>
+                <div className="flex-1 h-0.5 bg-slate-200"></div>
+                <div className="flex-1 h-0.5 bg-slate-200"></div>
+                <div className="flex-1 h-0.5 bg-slate-200"></div>
+              </div>
+              <div className="grid gap-8 md:grid-cols-5 relative">
+                {[
+                  {
+                    step: "1",
+                    title: "Pelanggan Duduk & Scan QR",
+                    description: "QR sudah ditempel di setiap meja.",
+                    icon: QrCode,
+                  },
+                  {
+                    step: "2",
+                    title: "Menu Digital Terbuka",
+                    description: "Pelanggan langsung pilih menu & variasi.",
+                    icon: Menu,
+                  },
+                  {
+                    step: "3",
+                    title: "Pembayaran Mudah",
+                    description: "Cash, Transfer, atau QRIS.",
+                    icon: CreditCard,
+                  },
+                  {
+                    step: "4",
+                    title: "Kasir Menerima Pesanan",
+                    description: "Dashboard real-time, tanpa delay.",
+                    icon: Monitor,
+                  },
+                  {
+                    step: "5",
+                    title: "Pesanan Disiapkan & Diantar",
+                    description: "Proses cepat, jelas, dan minim error.",
+                    icon: CheckCircle2,
+                  },
+                ].map((item, idx) => (
+                  <div key={idx} className="relative text-center z-10">
+                    <div className="mb-4 flex justify-center">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-2xl font-bold text-white shadow-lg relative z-20">
+                        {item.step}
+                      </div>
                     </div>
+                    <h3 className="mb-2 text-lg font-semibold text-slate-900">{item.title}</h3>
+                    <p className="text-sm text-slate-600">{item.description}</p>
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold text-slate-900">{item.title}</h3>
-                  <p className="text-sm text-slate-600">{item.description}</p>
-                  {idx < 4 && (
-                    <div className="absolute right-0 top-8 hidden h-0.5 w-full translate-x-1/2 bg-slate-200 md:block" />
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
