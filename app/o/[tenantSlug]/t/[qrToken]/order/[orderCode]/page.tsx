@@ -256,6 +256,21 @@ export default function OrderTrackingPage() {
     return () => clearInterval(interval);
   }, [isMockMode, apiBaseUrl, orderCode, order, fetchOrder]);
 
+  // Show modal if completed when first loading (not from status change)
+  // IMPORTANT: This useEffect must be called before any early returns to avoid hook order issues
+  const isCompleted = order?.order_status === "completed";
+  useEffect(() => {
+    // Only run on client-side after initial render to avoid hydration issues
+    if (!isMounted || typeof window === 'undefined') return;
+    
+    if (isCompleted && !hasShownCelebrationRef.current && order && previousStatusRef.current === null) {
+      // First time loading with completed status
+      setShowThankYouModal(true);
+      setHasShownCelebration(true);
+      hasShownCelebrationRef.current = true;
+    }
+  }, [isMounted, isCompleted, order]);
+
   // Map backend status to customer-facing status
   const customerStatus = order ? mapBackendStatusToCustomerStatus(order.order_status) : "accepted";
   const currentIndex = customerStatusSteps.findIndex((step) => step.key === customerStatus);
@@ -295,28 +310,13 @@ export default function OrderTrackingPage() {
     );
   }
 
-  const isCompleted = order?.order_status === "completed";
-
-  // Show modal if completed when first loading (not from status change)
-  useEffect(() => {
-    // Only run on client-side after initial render to avoid hydration issues
-    if (!isMounted || typeof window === 'undefined') return;
-    
-    if (isCompleted && !hasShownCelebrationRef.current && order && previousStatusRef.current === null) {
-      // First time loading with completed status
-      setShowThankYouModal(true);
-      setHasShownCelebration(true);
-      hasShownCelebrationRef.current = true;
-    }
-  }, [isMounted, isCompleted, order]);
-
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
       {/* Celebration Confetti Animation - Only render on client after mount */}
       {isMounted && showCelebration && <ConfettiAnimation />}
       
       {/* Thank You Modal - Only render on client after mount to avoid hydration issues */}
-      {isMounted && showThankYouModal && isCompleted && (
+      {isMounted && showThankYouModal && order?.order_status === "completed" && (
         <ThankYouModal 
           onClose={() => setShowThankYouModal(false)} 
           orderCode={order?.order_code || ""}
@@ -539,7 +539,7 @@ export default function OrderTrackingPage() {
             href={`/o/${tenantSlug}/t/${qrToken}`}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
           >
-            {isCompleted ? (
+            {order?.order_status === "completed" ? (
               <>
                 <Sparkles className="h-4 w-4" />
                 Pesan Lagi
