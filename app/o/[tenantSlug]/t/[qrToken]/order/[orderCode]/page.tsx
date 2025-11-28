@@ -94,6 +94,7 @@ export default function OrderTrackingPage() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [hasShownCelebration, setHasShownCelebration] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const hasShownCelebrationRef = useRef(false);
   const previousStatusRef = useRef<string | null>(null);
   const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "";
@@ -234,6 +235,10 @@ export default function OrderTrackingPage() {
   }, [apiBaseUrl, tenantSlug, orderCode, isMockMode]);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
     fetchOrder();
   }, [fetchOrder]);
 
@@ -295,7 +300,7 @@ export default function OrderTrackingPage() {
   // Show modal if completed when first loading (not from status change)
   useEffect(() => {
     // Only run on client-side after initial render to avoid hydration issues
-    if (typeof window === 'undefined') return;
+    if (!isMounted || typeof window === 'undefined') return;
     
     if (isCompleted && !hasShownCelebrationRef.current && order && previousStatusRef.current === null) {
       // First time loading with completed status
@@ -303,15 +308,15 @@ export default function OrderTrackingPage() {
       setHasShownCelebration(true);
       hasShownCelebrationRef.current = true;
     }
-  }, [isCompleted, order]);
+  }, [isMounted, isCompleted, order]);
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
-      {/* Celebration Confetti Animation */}
-      {showCelebration && <ConfettiAnimation />}
+      {/* Celebration Confetti Animation - Only render on client after mount */}
+      {isMounted && showCelebration && <ConfettiAnimation />}
       
-      {/* Thank You Modal */}
-      {showThankYouModal && isCompleted && (
+      {/* Thank You Modal - Only render on client after mount to avoid hydration issues */}
+      {isMounted && showThankYouModal && isCompleted && (
         <ThankYouModal 
           onClose={() => setShowThankYouModal(false)} 
           orderCode={order?.order_code || ""}
