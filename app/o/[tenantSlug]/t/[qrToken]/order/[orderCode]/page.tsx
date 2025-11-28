@@ -94,6 +94,7 @@ export default function OrderTrackingPage() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [hasShownCelebration, setHasShownCelebration] = useState(false);
+  const hasShownCelebrationRef = useRef(false);
   const previousStatusRef = useRef<string | null>(null);
   const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "";
   const isMockMode = !apiBaseUrl;
@@ -119,7 +120,10 @@ export default function OrderTrackingPage() {
     if (isMockMode) {
       if (orderCode.startsWith("MOCK-")) {
         // Try to get order data from localStorage (set by customer-experience)
-        const storedOrderData = localStorage.getItem(`mock_order_${orderCode}`);
+        // Check if we're in browser environment to avoid hydration issues
+        const storedOrderData = typeof window !== 'undefined' 
+          ? localStorage.getItem(`mock_order_${orderCode}`)
+          : null;
         if (storedOrderData) {
           try {
             const parsedOrder = JSON.parse(storedOrderData);
@@ -129,11 +133,12 @@ export default function OrderTrackingPage() {
             if (
               parsedOrder.order_status === "completed" && 
               previousStatus !== "completed" && 
-              !hasShownCelebration
+              !hasShownCelebrationRef.current
             ) {
               setShowCelebration(true);
               setShowThankYouModal(true);
               setHasShownCelebration(true);
+              hasShownCelebrationRef.current = true;
               setTimeout(() => setShowCelebration(false), 3000);
             }
             previousStatusRef.current = parsedOrder.order_status;
@@ -166,11 +171,12 @@ export default function OrderTrackingPage() {
           if (
             defaultOrder.order_status === "completed" && 
             previousStatus !== "completed" && 
-            !hasShownCelebration
+            !hasShownCelebrationRef.current
           ) {
             setShowCelebration(true);
             setShowThankYouModal(true);
             setHasShownCelebration(true);
+            hasShownCelebrationRef.current = true;
             setTimeout(() => setShowCelebration(false), 3000);
           }
           previousStatusRef.current = defaultOrder.order_status;
@@ -209,11 +215,12 @@ export default function OrderTrackingPage() {
       if (
         data.order_status === "completed" && 
         previousStatus !== "completed" && 
-        !hasShownCelebration
+        !hasShownCelebrationRef.current
       ) {
         setShowCelebration(true);
         setShowThankYouModal(true);
         setHasShownCelebration(true);
+        hasShownCelebrationRef.current = true;
         // Hide celebration after animation
         setTimeout(() => setShowCelebration(false), 3000);
       }
@@ -224,7 +231,7 @@ export default function OrderTrackingPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiBaseUrl, tenantSlug, orderCode]);
+  }, [apiBaseUrl, tenantSlug, orderCode, isMockMode]);
 
   useEffect(() => {
     fetchOrder();
@@ -287,12 +294,16 @@ export default function OrderTrackingPage() {
 
   // Show modal if completed when first loading (not from status change)
   useEffect(() => {
-    if (isCompleted && !hasShownCelebration && order && previousStatusRef.current === null) {
+    // Only run on client-side after initial render to avoid hydration issues
+    if (typeof window === 'undefined') return;
+    
+    if (isCompleted && !hasShownCelebrationRef.current && order && previousStatusRef.current === null) {
       // First time loading with completed status
       setShowThankYouModal(true);
       setHasShownCelebration(true);
+      hasShownCelebrationRef.current = true;
     }
-  }, [isCompleted, hasShownCelebration, order]);
+  }, [isCompleted, order]);
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
@@ -542,6 +553,9 @@ export default function OrderTrackingPage() {
 function ThankYouModal({ onClose, orderCode }: { onClose: () => void; orderCode: string }) {
   // Prevent body scroll when modal is open
   useEffect(() => {
+    // Only run on client-side to avoid hydration issues
+    if (typeof window === 'undefined') return;
+    
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "unset";
