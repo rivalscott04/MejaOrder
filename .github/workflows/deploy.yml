@@ -62,6 +62,9 @@ jobs:
             
             # 1. Build frontend
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+            echo "[$TIMESTAMP] Install dependencies dulu..." | tee -a "$LOG_FILE"
+            npm install || exit 1
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
             echo "[$TIMESTAMP] Lagi ngeracik frontend nih..." | tee -a "$LOG_FILE"
             npm run build:prod || exit 1
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
