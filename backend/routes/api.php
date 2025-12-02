@@ -175,6 +175,22 @@ Route::prefix('cashier')
     });
 
 /**
+ * KDS APIs.
+ */
+Route::prefix('kds')
+    ->middleware([
+        \Illuminate\Session\Middleware\StartSession::class,
+        'auth',
+        'role:cashier|tenant_admin',
+        'tenant.context',
+        'subscription.active',
+    ])
+    ->group(function () {
+        Route::get('orders', [\App\Http\Controllers\KdsController::class, 'index']);
+        Route::patch('orders/{order}/status', [\App\Http\Controllers\KdsController::class, 'updateStatus']);
+    });
+
+/**
  * Super admin APIs.
  */
 Route::prefix('admin')

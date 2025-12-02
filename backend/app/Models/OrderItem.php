@@ -19,11 +19,17 @@ class OrderItem extends Model
         'qty',
         'subtotal',
         'item_note',
+        'kitchen_status',
+        'kitchen_started_at',
+        'kitchen_ready_at',
+        'kitchen_station_id',
     ];
 
     protected $casts = [
         'price_snapshot' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'kitchen_started_at' => 'datetime',
+        'kitchen_ready_at' => 'datetime',
     ];
 
     public function order(): BelongsTo
