@@ -25,6 +25,7 @@ class KdsController extends Controller
         // If order_status is 'completed', it won't show up.
 
         return response()->json([
+            'tenant_id' => $tenant->id,
             'data' => $orders,
         ]);
     }

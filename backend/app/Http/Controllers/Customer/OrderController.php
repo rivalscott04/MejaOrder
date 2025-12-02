@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Events\OrderCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\StorePublicOrderRequest;
 use App\Models\Order;
@@ -23,6 +24,8 @@ class OrderController extends Controller
         $table = $this->resolveTable($tenant, (string) $request->validated('qr_token'));
 
         $order = $this->orderService->createFromPublicPayload($tenant, $table, $request->validated());
+
+        OrderCreated::dispatch($order);
 
         return response()->json($this->formatOrder($order), 201);
     }

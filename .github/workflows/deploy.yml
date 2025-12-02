@@ -1,20 +1,20 @@
-name: Deploy to Server
+name: Gas Deploy ke Server
 
 on:
   push:
     branches:
       - master
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch: # Buat trigger manual
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: Comot Kodingan Dulu
         uses: actions/checkout@v4
       
-      - name: Deploy to server
+      - name: OTW Deploy ke Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -22,7 +22,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
-            set -e  # Exit on error
+            set -e  # Kalo error langsung stop
             
             # Setup logging
             PROJECT_PATH="${{ secrets.PROJECT_PATH || '/var/www/MejaOrder' }}"
@@ -30,76 +30,75 @@ jobs:
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
             
             echo "=========================================="
-            echo "Deployment started at: $TIMESTAMP"
+            echo "Mulai deploy jam segini nih: $TIMESTAMP"
             echo "=========================================="
-            echo "[$TIMESTAMP] Checking project path: $PROJECT_PATH" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Ngecek lokasi project dulu: $PROJECT_PATH" | tee -a "$LOG_FILE"
             
             # Check if directory exists
             if [ ! -d "$PROJECT_PATH" ]; then
-              echo "Error: Directory $PROJECT_PATH does not exist!"
-              echo "Current directory: $(pwd)"
-              echo "Listing /var/www contents:"
-              ls -la /var/www/ || echo "Cannot list /var/www"
+              echo "Waduh! Folder $PROJECT_PATH gak ketemu nih bos!"
+              echo "Posisi sekarang di: $(pwd)"
+              echo "Isi folder /var/www:"
+              ls -la /var/www/ || echo "Gak bisa liat isi /var/www euy"
               exit 1
             fi
             
-            echo "[$TIMESTAMP] Directory exists, navigating..." | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Aman bos, folder ada. Meluncur..." | tee -a "$LOG_FILE"
             cd "$PROJECT_PATH"
-            echo "[$TIMESTAMP] Current directory: $(pwd)" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Posisi sekarang di: $(pwd)" | tee -a "$LOG_FILE"
             
             # Pull latest code
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Pulling latest code from master..." | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Tarik mang! Ambil update terbaru dari master..." | tee -a "$LOG_FILE"
             git pull origin master || {
               TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-              echo "[$TIMESTAMP] Git pull failed!" | tee -a "$LOG_FILE"
-              echo "[$TIMESTAMP] Current git status:" | tee -a "$LOG_FILE"
+              echo "[$TIMESTAMP] Yah gagal narik kodingan!" | tee -a "$LOG_FILE"
+              echo "[$TIMESTAMP] Status git sekarang:" | tee -a "$LOG_FILE"
               git status || true
               exit 1
             }
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Code pulled successfully" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Mantap! Kodingan udah paling update." | tee -a "$LOG_FILE"
             
             # 1. Build frontend
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Lagi build frontend nih..." | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Lagi ngeracik frontend nih..." | tee -a "$LOG_FILE"
             npm run build:prod || exit 1
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Frontend build selesai!" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Frontend udah kelar diracik!" | tee -a "$LOG_FILE"
             
             # 2. Restart service
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Restart service order..." | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Restart service dulu biar fresh..." | tee -a "$LOG_FILE"
             sudo systemctl restart order.service || exit 1
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Service udah di-restart" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Service udah nyala lagi bos!" | tee -a "$LOG_FILE"
             
             # 3. Navigate to backend folder
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Masuk ke folder backend..." | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Otw masuk kandang backend..." | tee -a "$LOG_FILE"
             cd backend || exit 1
             
             # 4. Run migrations
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Jalanin migrations..." | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Jalanin migrasi database dulu..." | tee -a "$LOG_FILE"
             php artisan migrate --force || exit 1
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Migrations selesai" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Migrasi beres!" | tee -a "$LOG_FILE"
             
             # 5. Clear config and cache
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Bersihin config sama cache..." | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Bebersih config sama cache dulu biar enteng..." | tee -a "$LOG_FILE"
             php artisan config:clear || exit 1
             php artisan cache:clear || exit 1
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            echo "[$TIMESTAMP] Config dan cache udah dibersihin" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] Udah kinclong bos!" | tee -a "$LOG_FILE"
             
             TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
             echo "" | tee -a "$LOG_FILE"
-            echo "[$TIMESTAMP] SELESAI! Backend Frontend udah siap semua boskuu!" | tee -a "$LOG_FILE"
+            echo "[$TIMESTAMP] KELAR BOS! Backend Frontend udah ready to rock!" | tee -a "$LOG_FILE"
             echo "==========================================" | tee -a "$LOG_FILE"
-            echo "Deployment completed at: $TIMESTAMP" | tee -a "$LOG_FILE"
+            echo "Deployment kelar jam: $TIMESTAMP" | tee -a "$LOG_FILE"
             echo "==========================================" | tee -a "$LOG_FILE"
             echo "" | tee -a "$LOG_FILE"
-            echo "Log tersimpan di: $LOG_FILE"
-
+            echo "Log disimpen di: $LOG_FILE"

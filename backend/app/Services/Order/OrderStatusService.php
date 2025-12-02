@@ -2,6 +2,8 @@
 
 namespace App\Services\Order;
 
+use App\Events\OrderKitchenStatusUpdated;
+use App\Events\OrderStatusUpdated;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
@@ -50,6 +52,8 @@ class OrderStatusService
             'note' => $note ?? ($force ? 'Status changed (forced)' : null),
         ]);
 
+        OrderStatusUpdated::dispatch($order);
+
         return $order;
     }
 
@@ -72,6 +76,8 @@ class OrderStatusService
         } else {
             $order->items()->update($updates);
         }
+
+        OrderKitchenStatusUpdated::dispatch($order);
 
         $this->syncOrderWithKitchenStatus($order, $actor);
     }

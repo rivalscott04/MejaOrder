@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import OrderCard from '@/components/kds/OrderCard';
+import { echo } from '@/lib/echo';
 
 interface Order {
     id: number;
@@ -19,6 +20,7 @@ export default function KdsPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+    const [tenantId, setTenantId] = useState<number | null>(null);
 
     const fetchOrders = async () => {
         try {
@@ -35,6 +37,9 @@ export default function KdsPage() {
             if (response.ok) {
                 const data = await response.json();
                 setOrders(data.data);
+                if (data.tenant_id) {
+                    setTenantId(data.tenant_id);
+                }
                 setLastUpdated(new Date());
             }
         } catch (error) {
@@ -58,7 +63,9 @@ export default function KdsPage() {
             });
 
             if (response.ok) {
-                fetchOrders(); // Refresh immediately
+                // Optimistic update or wait for Echo? 
+                // Let's wait for Echo or fetchOrders. 
+                // fetchOrders(); // Removed to rely on Echo or manual refresh if needed
             }
         } catch (error) {
             console.error('Failed to update status', error);
@@ -67,9 +74,47 @@ export default function KdsPage() {
 
     useEffect(() => {
         fetchOrders();
-        const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+        const interval = setInterval(fetchOrders, 30000); // Poll every 30 seconds as fallback
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        if (!tenantId || !echo) return;
+
+        console.log(`Subscribing to tenant.${tenantId}`);
+        const channel = echo.private(`tenant.${tenantId}`);
+
+        channel
+            .listen('OrderCreated', (e: any) => {
+                console.log('OrderCreated', e.order);
+                setOrders((prev) => {
+                    // Avoid duplicates
+                    if (prev.find(o => o.id === e.order.id)) return prev;
+                    return [...prev, e.order];
+                });
+                setLastUpdated(new Date());
+            })
+            .listen('OrderKitchenStatusUpdated', (e: any) => {
+                console.log('OrderKitchenStatusUpdated', e.order);
+                setOrders((prev) => prev.map(o => o.id === e.order.id ? e.order : o));
+                setLastUpdated(new Date());
+            })
+            .listen('OrderStatusUpdated', (e: any) => {
+                console.log('OrderStatusUpdated', e.order);
+                const activeStatuses = ['pending', 'accepted', 'preparing', 'ready'];
+                if (!activeStatuses.includes(e.order.order_status)) {
+                    setOrders((prev) => prev.filter(o => o.id !== e.order.id));
+                } else {
+                    setOrders((prev) => prev.map(o => o.id === e.order.id ? e.order : o));
+                }
+                setLastUpdated(new Date());
+            });
+
+        return () => {
+            console.log(`Unsubscribing from tenant.${tenantId}`);
+            echo?.leave(`tenant.${tenantId}`);
+        };
+    }, [tenantId]);
 
     return (
         <div className="min-h-screen bg-gray-900 text-white p-4">
